@@ -1,12 +1,23 @@
 Options -Indexes
 DirectoryIndex index.php
 
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set X-Permitted-Cross-Domain-Policies "none"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /sigap/
 
     RewriteRule ^(?:app|bootstrap|config|database|resources|routes|storage|tests|vendor)(?:/|$) - [F,L]
-    RewriteRule ^(?:\.env|\.git|composer\.(?:json|lock)|package\.json|phpunit\.xml|artisan|vite\.config\.js)$ - [F,L]
+    RewriteRule ^(?:\.env(?:\..*)?|\.git|\.svn|\.hg)(?:/|$) - [F,L]
+    RewriteRule ^(?:composer\.(?:json|lock)|package(?:-lock)?\.json|phpunit\.xml|artisan|vite\.config\.js)$ - [F,L]
+    RewriteRule \.(?:bak|backup|config|dist|ini|log|sql|swp|tmp)$ - [F,L]
 
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d

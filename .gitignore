@@ -1,8 +1,19 @@
 *.log
+*.tmp
+*.bak
+*.backup
+*.swp
 .DS_Store
+Thumbs.db
+
+# Environment and local secrets
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
+/auth.json
+/storage/*.key
+
+# IDE and local tooling
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -11,14 +22,47 @@
 /.phpunit.cache
 /.vscode
 /.zed
-/auth.json
+
+# Dependencies and build output
 /node_modules
+/vendor
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
+
+# Laravel generated runtime files
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/storage/app/*
+!/storage/app/.gitignore
+!/storage/app/private/
+!/storage/app/public/
+/storage/app/private/*
+!/storage/app/private/.gitignore
+/storage/app/public/*
+!/storage/app/public/.gitignore
+/storage/framework/cache/*
+!/storage/framework/cache/.gitignore
+!/storage/framework/cache/data/
+/storage/framework/cache/data/*
+!/storage/framework/cache/data/.gitignore
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitignore
+/storage/framework/testing/*
+!/storage/framework/testing/.gitignore
+/storage/framework/views/*
+!/storage/framework/views/.gitignore
+/storage/logs/*
+!/storage/logs/.gitignore
 /storage/pail
-/vendor
+
+# User-uploaded files moved under resources/assets during migration
+/resources/assets/upload/*
+!/resources/assets/upload/.gitignore
+!/resources/assets/upload/.htaccess
+/resources/assets/uploads/*
+!/resources/assets/uploads/.gitignore
+!/resources/assets/uploads/.htaccess
+
 Homestead.json
 Homestead.yaml
-Thumbs.db
