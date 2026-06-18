@@ -1,0 +1,676 @@
+<?php
+
+use Illuminate\Support\Facades\URL;
+
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__, 2));
+}
+
+if (!defined('BASE_URL')) {
+    define('BASE_URL', '/sigap');
+}
+
+if (!defined('SIGAP_SESSION_IDLE_TIMEOUT')) {
+    define('SIGAP_SESSION_IDLE_TIMEOUT', 60 * 15);
+}
+
+if (!defined('SIGAP_USER_SESSION_IDLE_TIMEOUT')) {
+    define('SIGAP_USER_SESSION_IDLE_TIMEOUT', SIGAP_SESSION_IDLE_TIMEOUT);
+}
+
+if (!defined('SIGAP_ADMIN_SESSION_IDLE_TIMEOUT')) {
+    define('SIGAP_ADMIN_SESSION_IDLE_TIMEOUT', SIGAP_SESSION_IDLE_TIMEOUT);
+}
+
+foreach ([
+    __DIR__ . '/Status/ReservationStatus.php',
+    __DIR__ . '/Auth/RoleAccess.php',
+    __DIR__ . '/../Services/ReservationApplicationPdf.php',
+    __DIR__ . '/../Services/ReservationPaymentPdf.php',
+] as $supportFile) {
+    if (is_file($supportFile)) {
+        require_once $supportFile;
+    }
+}
+
+if (!class_exists('Controller', false) && class_exists(\App\Http\Controllers\Controller::class)) {
+    class_alias(\App\Http\Controllers\Controller::class, 'Controller');
+}
+
+if (!function_exists('legacy_controller_path')) {
+    function legacy_controller_path(string $controller): string
+    {
+        $controller = trim(str_replace('\\', '/', $controller), '/');
+
+        if ($controller === '') {
+            abort(500, 'Controller legacy tidak valid.');
+        }
+
+        if (!str_contains($controller, '/')) {
+            $controller = 'Landing/' . $controller;
+        }
+
+        return BASE_PATH . '/app/Http/Controllers/' . $controller . '.php';
+    }
+}
+
+if (!function_exists('legacy_dispatch')) {
+    function legacy_dispatch(string $target, array $parameters = [])
+    {
+        [$controller, $method] = array_pad(explode('@', $target, 2), 2, 'index');
+        $controllerPath = legacy_controller_path($controller);
+        $className = basename(str_replace('\\', '/', $controller));
+
+        if (!is_file($controllerPath)) {
+            abort(500, "Controller legacy [{$controller}] tidak ditemukan.");
+        }
+
+        if (!class_exists($className, false)) {
+            require_once $controllerPath;
+        }
+
+        if (!class_exists($className, false)) {
+            abort(500, "Class controller legacy [{$className}] tidak ditemukan.");
+        }
+
+        $instance = new $className();
+
+        if (!method_exists($instance, $method)) {
+            abort(500, "Method [{$className}@{$method}] tidak ditemukan.");
+        }
+
+        ob_start();
+
+        try {
+            $result = $instance->{$method}(...array_values($parameters));
+            $output = ob_get_clean();
+        } catch (Throwable $exception) {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            throw $exception;
+        }
+
+        if ($result instanceof \Symfony\Component\HttpFoundation\Response) {
+            return $result;
+        }
+
+        if ($result instanceof \Illuminate\Contracts\Support\Responsable) {
+            return $result->toResponse(request());
+        }
+
+        return $result ?? response($output);
+    }
+}
+
+if (!class_exists('Database')) {
+    final class Database
+    {
+        private static ?PDO $connection = null;
+
+        public static function connect(): PDO
+        {
+            if (self::$connection instanceof PDO) {
+                return self::$connection;
+            }
+
+            $connectionName = config('database.default', 'local');
+            $connection = config("database.{$connectionName}", config('database.local', []));
+
+            $host = $connection['host'] ?? '127.0.0.1';
+            $port = (int) ($connection['port'] ?? 3306);
+            $database = $connection['dbname'] ?? $connection['database'] ?? 'sigap';
+            $charset = $connection['charset'] ?? 'utf8mb4';
+            $username = $connection['user'] ?? $connection['username'] ?? 'root';
+            $password = $connection['pass'] ?? $connection['password'] ?? '';
+
+            $dsn = "mysql:host={$host};port={$port};dbname={$database};charset={$charset}";
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ];
+
+            $sslCa = $connection['ssl_ca'] ?? null;
+            if (is_string($sslCa) && $sslCa !== '' && is_file($sslCa)) {
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+            }
+
+            self::$connection = new PDO($dsn, $username, $password, $options);
+
+            return self::$connection;
+        }
+
+        public static function getConnectionName(): string
+        {
+            return (string) config('database.default', 'local');
+        }
+    }
+}
+
+if (!function_exists('base_url')) {
+    function base_url(string $path = ''): string
+    {
+        $baseUrl = rtrim((string) config('app.base_url', BASE_URL), '/');
+        $path = ltrim($path, '/');
+
+        return $path === '' ? $baseUrl : $baseUrl . '/' . $path;
+    }
+}
+
+if (!function_exists('app_base_url')) {
+    function app_base_url(string $path = ''): string
+    {
+        return base_url($path);
+    }
+}
+
+if (!function_exists('asset_url')) {
+    function asset_url(string $path = ''): string
+    {
+        return base_url($path);
+    }
+}
+
+if (!function_exists('legacy_normalize_asset_path')) {
+    function legacy_normalize_asset_path(string $path): string
+    {
+        $path = trim(str_replace('\\', '/', $path));
+        $path = ltrim($path, '/');
+
+        if (str_starts_with($path, 'assets/')) {
+            $path = substr($path, strlen('assets/'));
+        }
+
+        if (str_starts_with($path, 'uploads/')) {
+            $path = 'upload/' . substr($path, strlen('uploads/'));
+        }
+
+        return ltrim($path, '/');
+    }
+}
+
+if (!function_exists('legacy_normalize_upload_relative_path')) {
+    function legacy_normalize_upload_relative_path(?string $path): string
+    {
+        $path = trim(str_replace('\\', '/', (string) $path));
+        $path = ltrim($path, '/');
+
+        foreach (['assets/uploads/', 'assets/upload/', 'uploads/', 'upload/'] as $prefix) {
+            if (str_starts_with($path, $prefix)) {
+                $path = substr($path, strlen($prefix));
+                break;
+            }
+        }
+
+        return ltrim($path, '/');
+    }
+}
+
+if (!function_exists('legacy_asset_path')) {
+    function legacy_asset_path(string $path = ''): string
+    {
+        $path = legacy_normalize_asset_path($path);
+
+        return resource_path('assets' . ($path !== '' ? '/' . $path : ''));
+    }
+}
+
+if (!function_exists('legacy_upload_path')) {
+    function legacy_upload_path(?string $path = ''): string
+    {
+        $path = legacy_normalize_upload_relative_path($path);
+
+        return resource_path('assets/upload' . ($path !== '' ? '/' . $path : ''));
+    }
+}
+
+if (!function_exists('legacy_asset_candidates')) {
+    function legacy_asset_candidates(string $path): array
+    {
+        $path = trim(str_replace('\\', '/', $path));
+        $path = ltrim($path, '/');
+        $withoutAssetsPrefix = str_starts_with($path, 'assets/')
+            ? substr($path, strlen('assets/'))
+            : $path;
+
+        $candidates = [
+            resource_path('assets/' . legacy_normalize_asset_path($withoutAssetsPrefix)),
+        ];
+
+        $uploadRelativePath = legacy_normalize_upload_relative_path($path);
+        if ($uploadRelativePath !== $path) {
+            $candidates[] = legacy_upload_path($uploadRelativePath);
+        }
+
+        return array_values(array_unique($candidates));
+    }
+}
+
+if (!function_exists('legacy_first_existing_asset_path')) {
+    function legacy_first_existing_asset_path(string $path): ?string
+    {
+        foreach (legacy_asset_candidates($path) as $candidate) {
+            $realPath = realpath($candidate);
+
+            if ($realPath !== false && is_file($realPath)) {
+                return $realPath;
+            }
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('legacy_delete_upload_file')) {
+    function legacy_delete_upload_file(?string $relativePath): void
+    {
+        $relativePath = legacy_normalize_upload_relative_path($relativePath);
+        if ($relativePath === '' || str_contains($relativePath, '..')) {
+            return;
+        }
+
+        $basePath = legacy_upload_path();
+        if (!is_dir($basePath)) {
+            return;
+        }
+
+        $realBasePath = realpath($basePath);
+        $targetPath = legacy_upload_path($relativePath);
+        $targetDirectory = realpath(dirname($targetPath));
+
+        if ($realBasePath === false || $targetDirectory === false) {
+            return;
+        }
+
+        if (!str_starts_with($targetDirectory, $realBasePath)) {
+            return;
+        }
+
+        if (is_file($targetPath)) {
+            @unlink($targetPath);
+        }
+    }
+}
+
+if (!function_exists('legacy_session_start')) {
+    function legacy_session_start(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        session_name('SIGAPSESSID');
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => rtrim(BASE_URL, '/') ?: '/',
+            'secure' => request()->isSecure(),
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        session_start();
+    }
+}
+
+if (!function_exists('verify_csrf')) {
+    function verify_csrf(): void
+    {
+        legacy_session_start();
+
+        $token = (string) ($_POST['_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        if ($token === '' || !hash_equals((string) csrf_token(), $token)) {
+            abort(419, 'Sesi Anda telah habis. Silakan muat ulang halaman.');
+        }
+    }
+}
+
+if (!function_exists('verify_csrf_or_redirect')) {
+    function verify_csrf_or_redirect(string $path, string $message = 'Sesi Anda telah habis. Silakan ulangi.'): void
+    {
+        try {
+            verify_csrf();
+        } catch (Throwable $exception) {
+            legacy_session_start();
+            $_SESSION['error'] = $message;
+            header('Location: ' . base_url($path));
+            exit;
+        }
+    }
+}
+
+if (!function_exists('set_authenticated_user_session')) {
+    function set_authenticated_user_session(array $user): void
+    {
+        legacy_session_start();
+        $_SESSION['user'] = $user;
+        $_SESSION['user_id'] = (int) ($user['id'] ?? 0);
+        touch_user_session_activity();
+    }
+}
+
+if (!function_exists('set_authenticated_admin_session')) {
+    function set_authenticated_admin_session(array $admin): void
+    {
+        legacy_session_start();
+        $_SESSION['admin'] = $admin;
+        $_SESSION['admin_id'] = (int) ($admin['id'] ?? 0);
+        touch_admin_session_activity();
+    }
+}
+
+if (!function_exists('user_user')) {
+    function user_user(): ?array
+    {
+        legacy_session_start();
+
+        return isset($_SESSION['user']) && is_array($_SESSION['user']) ? $_SESSION['user'] : null;
+    }
+}
+
+if (!function_exists('admin_user')) {
+    function admin_user(): ?array
+    {
+        legacy_session_start();
+
+        return isset($_SESSION['admin']) && is_array($_SESSION['admin']) ? $_SESSION['admin'] : null;
+    }
+}
+
+if (!function_exists('is_user_logged_in')) {
+    function is_user_logged_in(): bool
+    {
+        return user_user() !== null;
+    }
+}
+
+if (!function_exists('is_admin_logged_in')) {
+    function is_admin_logged_in(): bool
+    {
+        return admin_user() !== null;
+    }
+}
+
+if (!function_exists('destroy_user_auth_session')) {
+    function destroy_user_auth_session(): void
+    {
+        legacy_session_start();
+        unset($_SESSION['user'], $_SESSION['user_id'], $_SESSION['user_last_activity']);
+    }
+}
+
+if (!function_exists('destroy_admin_auth_session')) {
+    function destroy_admin_auth_session(): void
+    {
+        legacy_session_start();
+        unset($_SESSION['admin'], $_SESSION['admin_id'], $_SESSION['admin_last_activity']);
+    }
+}
+
+if (!function_exists('touch_user_session_activity')) {
+    function touch_user_session_activity(): void
+    {
+        legacy_session_start();
+        $_SESSION['user_last_activity'] = time();
+    }
+}
+
+if (!function_exists('touch_admin_session_activity')) {
+    function touch_admin_session_activity(): void
+    {
+        legacy_session_start();
+        $_SESSION['admin_last_activity'] = time();
+    }
+}
+
+if (!function_exists('user_session_idle_timeout_seconds')) {
+    function user_session_idle_timeout_seconds(): int
+    {
+        return SIGAP_USER_SESSION_IDLE_TIMEOUT;
+    }
+}
+
+if (!function_exists('admin_session_idle_timeout_seconds')) {
+    function admin_session_idle_timeout_seconds(): int
+    {
+        return SIGAP_ADMIN_SESSION_IDLE_TIMEOUT;
+    }
+}
+
+if (!function_exists('auth_session_expired_message')) {
+    function auth_session_expired_message(string $guard = 'user'): string
+    {
+        return 'Sesi ' . ($guard === 'admin' ? 'admin' : 'Anda') . ' telah berakhir. Silakan masuk ulang.';
+    }
+}
+
+if (!function_exists('auth_browser_session_storage_key')) {
+    function auth_browser_session_storage_key(string $guard): string
+    {
+        return 'sigap_' . $guard . '_session_active';
+    }
+}
+
+if (!function_exists('require_admin')) {
+    function require_admin(): void
+    {
+        if (!is_admin_logged_in()) {
+            header('Location: ' . base_url('admin/login'));
+            exit;
+        }
+
+        touch_admin_session_activity();
+    }
+}
+
+if (!function_exists('require_admin_menu_access')) {
+    function require_admin_menu_access(string $accessKey): void
+    {
+        require_admin();
+    }
+}
+
+if (!function_exists('admin_menu_blueprint')) {
+    function admin_menu_blueprint(): array
+    {
+        return [];
+    }
+}
+
+if (!function_exists('admin_flatten_leaf_menu_items')) {
+    function admin_flatten_leaf_menu_items(array $items): array
+    {
+        return [];
+    }
+}
+
+if (!function_exists('admin_role_access_keys')) {
+    function admin_role_access_keys(int $roleId): array
+    {
+        return [];
+    }
+}
+
+if (!function_exists('resolve_admin_access_overview')) {
+    function resolve_admin_access_overview(): array
+    {
+        return [];
+    }
+}
+
+if (!function_exists('resolve_admin_role_context')) {
+    function resolve_admin_role_context(array $admin = []): array
+    {
+        return [
+            'scope_type' => 'all',
+            'district_name' => '',
+            'dashboard_title' => 'Infografis Admin',
+        ];
+    }
+}
+
+if (!function_exists('reservation_status_normalize')) {
+    function reservation_status_normalize(string $status): string
+    {
+        $status = strtoupper(trim($status));
+        $status = str_replace(['-', '_'], ' ', $status);
+        $status = preg_replace('/\s+/', ' ', $status) ?? $status;
+
+        return $status;
+    }
+}
+
+if (!function_exists('reservation_status_display_key')) {
+    function reservation_status_display_key(?string $status): string
+    {
+        $status = reservation_status_normalize((string) $status);
+
+        return match ($status) {
+            '',
+            'BARU',
+            'RESERVASI',
+            'RESERVASI BARU',
+            'PENGAJUAN BARU',
+            'MENUNGGU PERSETUJUAN' => 'RESERVASI BARU',
+            'BERKAS TIDAK SESUAI',
+            'REVISI RESERVASI',
+            'BERKAS RESERVASI TIDAK SESUAI' => 'BERKAS RESERVASI TIDAK SESUAI',
+            'KERJASAMA UMKM',
+            'KERJA SAMA UMKM' => 'KERJASAMA UMKM',
+            'VERIFIKASI',
+            'PROSES VERIFIKASI' => 'PROSES VERIFIKASI',
+            'REVISI KERJASAMA UMKM',
+            'REVISI KERJA SAMA UMKM',
+            'BERKAS VERIFIKASI TIDAK SESUAI' => 'BERKAS VERIFIKASI TIDAK SESUAI',
+            'PEMBAYARAN',
+            'MENUNGGU PEMBAYARAN' => 'MENUNGGU PEMBAYARAN',
+            'PROSES PEMBAYARAN',
+            'CEK PEMBAYARAN' => 'CEK PEMBAYARAN',
+            'REVISI PEMBAYARAN',
+            'BERKAS PEMBAYARAN TIDAK SESUAI' => 'BERKAS PEMBAYARAN TIDAK SESUAI',
+            'LUNAS',
+            'PEMBAYARAN LUNAS' => 'PEMBAYARAN LUNAS',
+            'DITOLAK',
+            'PERMOHONAN DITOLAK' => 'PERMOHONAN DITOLAK',
+            'BATAL',
+            'DIBATALKAN',
+            'DIBATALKAN PEMOHON' => 'DIBATALKAN PEMOHON',
+            'SELESAI',
+            'ACARA SELESAI' => 'ACARA SELESAI',
+            default => $status,
+        };
+    }
+}
+
+if (!function_exists('reservation_status_storage_value')) {
+    function reservation_status_storage_value(?string $status): string
+    {
+        return reservation_status_display_key($status);
+    }
+}
+
+if (!function_exists('reservation_status_filter_values')) {
+    function reservation_status_filter_values(array $statuses): array
+    {
+        $normalizedStatuses = [];
+
+        foreach ($statuses as $status) {
+            $displayKey = reservation_status_display_key((string) $status);
+
+            if ($displayKey !== '') {
+                $normalizedStatuses[] = $displayKey;
+            }
+        }
+
+        return array_values(array_unique($normalizedStatuses));
+    }
+}
+
+if (!function_exists('reservation_status_uses_order_code')) {
+    function reservation_status_uses_order_code(?string $status): bool
+    {
+        return in_array(reservation_status_display_key($status), [
+            'MENUNGGU PEMBAYARAN',
+            'CEK PEMBAYARAN',
+            'BERKAS PEMBAYARAN TIDAK SESUAI',
+            'PEMBAYARAN LUNAS',
+            'ACARA SELESAI',
+        ], true);
+    }
+}
+
+if (!function_exists('reservation_status_label')) {
+    function reservation_status_label(?string $status): string
+    {
+        $status = reservation_status_display_key($status);
+
+        return mb_convert_case(strtolower($status), MB_CASE_TITLE, 'UTF-8');
+    }
+}
+
+if (!function_exists('reservation_status_html_label')) {
+    function reservation_status_html_label(?string $status): string
+    {
+        return e(reservation_status_label($status));
+    }
+}
+
+if (!function_exists('reservation_status_tone')) {
+    function reservation_status_tone(?string $status): string
+    {
+        return match (reservation_status_display_key($status)) {
+            'RESERVASI BARU',
+            'PROSES VERIFIKASI',
+            'CEK PEMBAYARAN' => 'warning',
+            'KERJASAMA UMKM' => 'info',
+            'MENUNGGU PEMBAYARAN' => 'primary',
+            'PEMBAYARAN LUNAS' => 'success',
+            'PERMOHONAN DITOLAK',
+            'DIBATALKAN PEMOHON' => 'danger',
+            'BERKAS RESERVASI TIDAK SESUAI',
+            'BERKAS VERIFIKASI TIDAK SESUAI',
+            'BERKAS PEMBAYARAN TIDAK SESUAI',
+            'ACARA SELESAI' => 'secondary',
+            default => 'secondary',
+        };
+    }
+}
+
+if (!function_exists('reservation_status_class_lookup')) {
+    function reservation_status_class_lookup(): array
+    {
+        $statuses = [
+            'RESERVASI BARU',
+            'BERKAS RESERVASI TIDAK SESUAI',
+            'KERJASAMA UMKM',
+            'PROSES VERIFIKASI',
+            'BERKAS VERIFIKASI TIDAK SESUAI',
+            'MENUNGGU PEMBAYARAN',
+            'CEK PEMBAYARAN',
+            'BERKAS PEMBAYARAN TIDAK SESUAI',
+            'PEMBAYARAN LUNAS',
+            'PERMOHONAN DITOLAK',
+            'DIBATALKAN PEMOHON',
+            'ACARA SELESAI',
+        ];
+        $lookup = [];
+
+        foreach ($statuses as $status) {
+            $lookup[$status] = reservation_status_tone($status);
+        }
+
+        $lookup['BERKAS TIDAK SESUAI'] = reservation_status_tone('BERKAS RESERVASI TIDAK SESUAI');
+
+        return $lookup;
+    }
+}
+
+if (!function_exists('reservation_status_matches')) {
+    function reservation_status_matches(string $status, array $statuses): bool
+    {
+        $normalizedStatus = reservation_status_display_key($status);
+        $normalizedStatuses = reservation_status_filter_values($statuses);
+
+        return in_array($normalizedStatus, $normalizedStatuses, true);
+    }
+}
