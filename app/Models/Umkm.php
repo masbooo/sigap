@@ -1,5 +1,10 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use PDO;
+
 class Umkm
 {
     protected PDO $db;
@@ -10,7 +15,7 @@ class Umkm
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
     }
 
     public function getRatingReportItems(): array

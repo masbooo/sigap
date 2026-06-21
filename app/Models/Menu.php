@@ -1,5 +1,11 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use PDO;
+use Throwable;
+
 class Menu
 {
     protected PDO $db;
@@ -7,7 +13,7 @@ class Menu
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
     }
 
     public function getHydratedBlueprint(array $masterBlueprint, array $defaultRoleAccessMap = []): array

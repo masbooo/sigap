@@ -293,7 +293,7 @@ function current_user_data(): ?array
     $mergedUser = $sessionUser;
 
     try {
-        $userModel = new User();
+        $userModel = new \App\Models\User();
         $dbUser = $userModel->findById($userId);
 
         if (is_array($dbUser) && !empty($dbUser)) {
@@ -455,7 +455,7 @@ function resolve_user_rating_notifications(?array $userData = null): array
     }
 
     try {
-        $ratingModel = new Rating();
+        $ratingModel = new \App\Models\Rating();
         $cache[$userId] = $ratingModel->getUserRatingNotifications($userId);
     } catch (Throwable $e) {
         $cache[$userId] = [
@@ -496,7 +496,7 @@ function resolve_admin_district_name(?array $adminData = null): string
         $districtMap = [];
 
         try {
-            $wilayahModel = new Wilayah();
+            $wilayahModel = new \App\Models\Wilayah();
 
             foreach ($wilayahModel->getDistricts() as $district) {
                 $id = (int) ($district['id'] ?? 0);
@@ -697,7 +697,7 @@ function admin_menu_blueprint(): array
     ];
 
     try {
-        $menuModel = new Menu();
+        $menuModel = new \App\Models\Menu();
         $blueprint = $menuModel->getHydratedBlueprint($masterBlueprint, $defaultRoleAccessMap);
     } catch (Throwable $e) {
         $blueprint = $masterBlueprint;
@@ -839,7 +839,7 @@ function admin_role_access_keys(int $roleId): array
     $fallbackKeys = admin_role_default_access_keys($roleId);
 
     try {
-        $menuModel = new Menu();
+        $menuModel = new \App\Models\Menu();
         $blueprint = admin_menu_blueprint();
         $leafItems = admin_flatten_leaf_menu_items($blueprint);
         $menuIdToKeyMap = [];
@@ -963,7 +963,7 @@ function admin_roles_catalog(): array
     ];
 
     try {
-        $menuModel = new Menu();
+        $menuModel = new \App\Models\Menu();
         foreach ($menuModel->getRoles() as $role) {
             $roleId = (int) ($role['id'] ?? 0);
             if ($roleId <= 0) {

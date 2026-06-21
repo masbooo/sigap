@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+
 class ProfilController extends Controller
 {
     private const PROFILE_PHOTO_UPLOAD_DIRECTORY = 'user/profile';
@@ -65,7 +69,7 @@ class ProfilController extends Controller
         }
 
         verify_csrf_or_redirect('/user/profil', 'Sesi Anda telah habis. Silakan ulangi upload foto profil.');
-        require_once BASE_PATH . '/app/helpers/upload_helper.php';
+        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
 
         $userModel = $this->model('User');
         $file = $_FILES['profile_photo'] ?? null;

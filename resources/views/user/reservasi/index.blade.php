@@ -341,10 +341,10 @@
                                                             data-reservation-id="{{ $reservation['id'] }}"
                                                             data-reservation-code="{{ $reservationCode }}"
                                                         >
-                                                            <span class="admin-table-action-icon text-success bg-success-subtle">
+                                                            <span class="admin-table-action-icon text-success bg-success-subtle js-user-reservation-payment-action-icon">
                                                                 <i class="ti ti-cash fs-5"></i>
                                                             </span>
-                                                            <span class="admin-table-action-label">Bayar</span>
+                                                            <span class="admin-table-action-label js-user-reservation-payment-action-label">Bayar</span>
                                                         </button>
                                                     @endif
 
@@ -815,6 +815,9 @@
         'openButtonId' => 'user-reservation-open-button',
         'printButtonId' => 'reservation-print-button',
         'printUrl' => $reservationPrintUrl ?? base_url('user/reservasi/permohonan/cetak'),
+        'paymentProcessUrl' => base_url('user/reservasi/pembayaran/proses'),
+        'paymentRevisionUrl' => base_url('user/reservasi/pembayaran/revisi'),
+        'csrfToken' => csrf_token(),
         'detailRowId' => 'user-reservation-detail-row',
         'formColumnId' => 'user-reservation-form-column',
         'summaryColumnId' => 'user-reservation-summary-column',

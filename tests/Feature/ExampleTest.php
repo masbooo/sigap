@@ -2,18 +2,32 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Http\Controllers\Landing\HomeController;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
-    /**
-     * A basic test example.
-     */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_health_endpoint_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
+        $this->assertSame('sqlite', config('database.default'));
+        $this->get('/up')->assertOk();
+    }
 
-        $response->assertStatus(200);
+    public function test_web_routes_use_laravel_controller_actions(): void
+    {
+        $homeRoute = Route::getRoutes()->getByName('home');
+
+        $this->assertNotNull($homeRoute);
+        $this->assertSame(HomeController::class.'@index', $homeRoute->getActionName());
+        $this->assertNotNull(Route::getRoutes()->getByName('admin.dashboard'));
+        $this->assertNotNull(Route::getRoutes()->getByName('user.reservasi.index'));
+    }
+
+    public function test_landing_footer_uses_the_laravel_database_configuration(): void
+    {
+        $html = view('partials.landing.footer')->render();
+
+        $this->assertStringContainsString(strtoupper((string) config('database.default')), $html);
     }
 }

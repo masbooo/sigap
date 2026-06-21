@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Supports/legacy.php';
+require_once __DIR__ . '/../legacy.php';
 
 if (!function_exists('upload_file')) {
     function upload_file(array $file, string $directory, ?array $allowedExtensions = null): ?string

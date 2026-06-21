@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+
 class RatingController extends Controller
 {
     public function index()

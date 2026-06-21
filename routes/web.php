@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\CaptchaController;
+use App\Http\Controllers\Landing;
+use App\Http\Controllers\User;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
@@ -7,12 +10,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
-require_once base_path('app/Supports/legacy.php');
-
-$legacy = static fn (string $target): Closure => static function (...$parameters) use ($target) {
-    return legacy_dispatch($target, $parameters);
-};
 
 Route::get('assets/{path}', static function (string $path) {
     $path = trim(str_replace('\\', '/', $path), '/');
@@ -78,74 +75,57 @@ Route::get('assets/{path}', static function (string $path) {
         SubstituteBindings::class,
     ]);
 
-Route::get('/', $legacy('Landing/HomeController@index'));
-Route::get('gedung', $legacy('Landing/GedungController@index'));
-Route::get('jadwal/events', $legacy('Landing/JadwalController@events'));
-Route::get('jadwal', $legacy('Landing/JadwalController@index'));
-Route::get('umkm', $legacy('Landing/UmkmController@index'));
-Route::get('umkm/{page}', $legacy('Landing/UmkmController@index'))->whereNumber('page');
-Route::get('kontak', $legacy('Landing/KontakController@index'));
-Route::get('captcha', $legacy('Landing/CaptchaController@image'));
+Route::get('/', [Landing\HomeController::class, 'index'])->name('home');
+Route::get('gedung', [Landing\GedungController::class, 'index'])->name('gedung.index');
+Route::get('jadwal', [Landing\JadwalController::class, 'index'])->name('jadwal.index');
+Route::get('umkm', [Landing\UmkmController::class, 'index'])->name('umkm.index');
+Route::get('umkm/{page}', [Landing\UmkmController::class, 'index'])->whereNumber('page')->name('umkm.page');
+Route::get('kontak', [Landing\KontakController::class, 'index'])->name('kontak.index');
+Route::get('captcha', [CaptchaController::class, 'image'])->name('captcha');
 
-Route::get('login', $legacy('User/AuthController@login'));
-Route::post('login', $legacy('User/AuthController@authenticate'));
-Route::get('daftar', $legacy('User/AuthController@register'));
-Route::post('daftar', $legacy('User/AuthController@createUser'));
-Route::get('lupa-sandi', $legacy('User/AuthController@forget'));
-Route::get('lupa-sandi/batal', $legacy('User/AuthController@cancelForgotPassword'));
-Route::post('lupa-sandi/verifikasi', $legacy('User/AuthController@verifyForgotPassword'));
-Route::post('lupa-sandi/reset', $legacy('User/AuthController@resetForgotPassword'));
-Route::get('cek-username', $legacy('User/AuthController@checkUsername'));
-Route::get('logout', $legacy('User/AuthController@logout'));
-Route::post('user/session/keepalive', $legacy('User/AuthController@keepAlive'));
+Route::controller(User\AuthController::class)->group(function (): void {
+    Route::get('login', 'login')->name('login');
+    Route::post('login', 'authenticate')->name('login.authenticate');
+    Route::get('daftar', 'register')->name('register');
+    Route::post('daftar', 'createUser')->name('register.store');
+    Route::get('lupa-sandi', 'forget')->name('password.request');
+    Route::get('lupa-sandi/batal', 'cancelForgotPassword')->name('password.cancel');
+    Route::post('lupa-sandi/verifikasi', 'verifyForgotPassword')->name('password.verify');
+    Route::post('lupa-sandi/reset', 'resetForgotPassword')->name('password.update');
+    Route::get('cek-username', 'checkUsername')->name('username.check');
+    Route::get('logout', 'logout')->name('logout');
+});
 
-Route::match(['get', 'post'], 'user/dasbor', $legacy('User/DashboardController@index'));
-Route::get('user/reservasi', $legacy('User/ReservasiController@index'));
-Route::get('user/reservasi/rubah/{id}', $legacy('User/ReservasiController@index'))->whereNumber('id');
-Route::get('user/reservasi/panel', $legacy('User/ReservasiController@panel'));
-Route::get('user/reservasi/panel/rubah/{id}', $legacy('User/ReservasiController@panel'))->whereNumber('id');
-Route::post('user/reservasi/permohonan/cetak', $legacy('User/ReservasiController@printApplication'));
-Route::get('user/reservasi/pembayaran/cetak/{id}/{filename}', $legacy('User/ReservasiController@printPaymentDocument'))
-    ->whereNumber('id')
-    ->where('filename', '[^/]+');
-Route::get('user/reservasi/pembayaran/cetak/{id}', $legacy('User/ReservasiController@printPaymentDocument'))->whereNumber('id');
-Route::post('user/reservasi', $legacy('User/ReservasiController@store'));
-Route::post('user/reservasi/update', $legacy('User/ReservasiController@update'));
-Route::post('user/reservasi/hapus', $legacy('User/ReservasiController@destroy'));
-Route::post('user/reservasi/batal', $legacy('User/ReservasiController@cancel'));
-Route::get('user/pembayaran', $legacy('User/PembayaranController@index'));
-Route::post('user/pembayaran/upload', $legacy('User/PembayaranController@uploadProof'));
-Route::get('user/profil', $legacy('User/ProfilController@index'));
-Route::post('user/profil/foto', $legacy('User/ProfilController@updatePhoto'));
-Route::post('user/profil/foto/reset', $legacy('User/ProfilController@resetPhoto'));
-Route::post('user/profil/password', $legacy('User/ProfilController@updatePassword'));
-Route::get('user/faq', $legacy('User/FaqController@index'));
-Route::get('user/rating', $legacy('User/RatingController@index'));
-Route::post('user/rating', $legacy('User/RatingController@store'));
+Route::prefix('user')->name('user.')->middleware('user')->group(function (): void {
+    Route::match(['get', 'post'], 'dasbor', [User\DashboardController::class, 'index'])->name('dashboard');
+    Route::post('session/keepalive', [User\AuthController::class, 'keepAlive'])->name('session.keepalive');
 
-Route::get('admin', $legacy('Admin/DashboardController@index'));
-Route::get('admin/login', $legacy('Admin/AuthController@login'));
-Route::post('admin/login', $legacy('Admin/AuthController@authenticate'));
-Route::get('admin/logout', $legacy('Admin/AuthController@logout'));
-Route::get('admin/dasbor', $legacy('Admin/DashboardController@index'));
-Route::get('admin/kalender', $legacy('Admin/DashboardController@calendar'));
-Route::get('admin/laporan/rating', $legacy('Admin/LaporanController@rating'));
-Route::get('admin/laporan/rating/gedung', $legacy('Admin/LaporanController@gedung'));
-Route::get('admin/laporan/rating/umkm', $legacy('Admin/LaporanController@umkm'));
-Route::get('admin/pengaturan/akses', $legacy('Admin/DashboardController@accessSettings'));
-Route::post('admin/pengaturan/akses', $legacy('Admin/DashboardController@saveAccessSettings'));
-Route::get('admin/reservasi', $legacy('Admin/ReservasiController@index'));
-Route::get('admin/riwayat/gedung', $legacy('Admin/ReservasiController@gedung'));
-Route::get('admin/riwayat/umkm', $legacy('Admin/ReservasiController@umkm'));
-Route::post('admin/reservasi/setujui', $legacy('Admin/ReservasiController@approve'));
-Route::post('admin/reservasi/kembali', $legacy('Admin/ReservasiController@returnToApplicant'));
-Route::post('admin/reservasi/tolak', $legacy('Admin/ReservasiController@reject'));
-Route::post('admin/riwayat/gedung/hapus', $legacy('Admin/ReservasiController@destroy'));
-Route::post('admin/riwayat/umkm/hapus', $legacy('Admin/ReservasiController@destroyUmkm'));
-Route::get('admin/pembayaran', $legacy('Admin/PembayaranController@index'));
-Route::post('admin/pembayaran/lunas', $legacy('Admin/PembayaranController@markAsPaid'));
-Route::post('admin/pembayaran/kembali', $legacy('Admin/PembayaranController@returnToApplicant'));
-Route::get('admin/verifikasi', $legacy('Admin/VerifikasiController@index'));
-Route::post('admin/verifikasi/setuju', $legacy('Admin/VerifikasiController@approve'));
-Route::post('admin/verifikasi/kembali', $legacy('Admin/VerifikasiController@returnToApplicant'));
-Route::post('admin/session/keepalive', $legacy('Admin/AuthController@keepAlive'));
+    Route::controller(User\ReservasiController::class)->prefix('reservasi')->name('reservasi.')->group(function (): void {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::get('rubah/{id}', 'index')->whereNumber('id')->name('edit');
+        Route::get('panel', 'panel')->name('panel');
+        Route::get('panel/rubah/{id}', 'panel')->whereNumber('id')->name('panel.edit');
+        Route::post('permohonan/cetak', 'printApplication')->name('application.print');
+        Route::get('pembayaran/cetak/{id}/{filename}', 'printPaymentDocument')
+            ->whereNumber('id')->where('filename', '[^/]+')->name('payment.print.named');
+        Route::get('pembayaran/cetak/{id}', 'printPaymentDocument')->whereNumber('id')->name('payment.print');
+        Route::post('pembayaran/proses', 'processPaymentMethod')->name('payment.process');
+        Route::post('pembayaran/revisi', 'revisePaymentMethod')->name('payment.revise');
+        Route::post('update', 'update')->name('update');
+        Route::post('hapus', 'destroy')->name('destroy');
+        Route::post('batal', 'cancel')->name('cancel');
+    });
+
+    Route::get('pembayaran', [User\PembayaranController::class, 'index'])->name('pembayaran.index');
+    Route::post('pembayaran/upload', [User\PembayaranController::class, 'uploadProof'])->name('pembayaran.upload');
+    Route::get('profil', [User\ProfilController::class, 'index'])->name('profil.index');
+    Route::post('profil/foto', [User\ProfilController::class, 'updatePhoto'])->name('profil.photo.update');
+    Route::post('profil/foto/reset', [User\ProfilController::class, 'resetPhoto'])->name('profil.photo.reset');
+    Route::post('profil/password', [User\ProfilController::class, 'updatePassword'])->name('profil.password.update');
+    Route::get('faq', [User\FaqController::class, 'index'])->name('faq.index');
+    Route::get('rating', [User\RatingController::class, 'index'])->name('rating.index');
+    Route::post('rating', [User\RatingController::class, 'store'])->name('rating.store');
+});
+
+require __DIR__.'/admin.php';

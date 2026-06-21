@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+
 class PembayaranController extends Controller
 {
     public function index()
@@ -48,7 +52,7 @@ class PembayaranController extends Controller
         }
 
         verify_csrf();
-        require_once BASE_PATH . '/app/helpers/upload_helper.php';
+        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
 
         $reservationId = (int) ($_POST['reservation_id'] ?? 0);
         if ($reservationId <= 0) {

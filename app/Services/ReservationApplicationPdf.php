@@ -1,5 +1,7 @@
 <?php
 
+namespace App\Services;
+
 class ReservationApplicationPdf
 {
     private const PAGE_WIDTH = 595.28;

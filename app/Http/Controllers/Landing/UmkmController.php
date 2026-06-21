@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Http\Controllers\Landing;
+
+use App\Http\Controllers\Controller;
+
 class UmkmController extends Controller
 {
     public function index(?string $page = null)

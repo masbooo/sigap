@@ -1,5 +1,9 @@
 <?php
 
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+
 class DashboardController extends Controller
 {
     private const PROFILE_ID_UPLOAD_DIRECTORY = 'user/identitas';
@@ -163,7 +167,7 @@ class DashboardController extends Controller
         }
 
         verify_csrf_or_redirect('/user/dasbor', 'Sesi Anda telah habis. Silakan ulangi simpan profil.');
-        require_once BASE_PATH . '/app/helpers/upload_helper.php';
+        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
 
         $userId = (int) $_SESSION['user']['id'];
         $userModel = $this->model('User');

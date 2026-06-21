@@ -1,5 +1,12 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use PDO;
+use Throwable;
+
 class User
 {
     protected PDO $db;
@@ -8,7 +15,7 @@ class User
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
         $this->ensureIdentityPathSchema();
     }
 
@@ -345,19 +352,7 @@ class User
             return $this->columnExistsCache[$cacheKey];
         }
 
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) AS total
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = :table
-              AND COLUMN_NAME = :column
-        ");
-        $stmt->execute([
-            ':table' => $table,
-            ':column' => $column,
-        ]);
-
-        $exists = (int) ($stmt->fetch()['total'] ?? 0) > 0;
+        $exists = Schema::hasColumn($table, $column);
         $this->columnExistsCache[$cacheKey] = $exists;
 
         return $exists;

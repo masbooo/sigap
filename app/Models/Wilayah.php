@@ -1,12 +1,17 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use PDO;
+
 class Wilayah
 {
     protected PDO $db;
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
     }
 
     public function getRegions(): array

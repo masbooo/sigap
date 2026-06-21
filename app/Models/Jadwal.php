@@ -1,5 +1,11 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use PDO;
+
 class Jadwal
 {
     protected PDO $db;
@@ -7,7 +13,7 @@ class Jadwal
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
     }
 
     public function getFilterData(): array
@@ -313,19 +319,7 @@ class Jadwal
             return $this->columnExistsCache[$cacheKey];
         }
 
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) AS total
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = :table
-              AND COLUMN_NAME = :column
-        ");
-        $stmt->execute([
-            ':table' => $table,
-            ':column' => $column,
-        ]);
-
-        $exists = (int) (($stmt->fetch()['total'] ?? 0)) > 0;
+        $exists = Schema::hasColumn($table, $column);
         $this->columnExistsCache[$cacheKey] = $exists;
 
         return $exists;
@@ -338,17 +332,7 @@ class Jadwal
             return $this->columnExistsCache[$cacheKey];
         }
 
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) AS total
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE TABLE_SCHEMA = DATABASE()
-              AND TABLE_NAME = :table
-        ");
-        $stmt->execute([
-            ':table' => $table,
-        ]);
-
-        $exists = (int) (($stmt->fetch()['total'] ?? 0)) > 0;
+        $exists = Schema::hasTable($table);
         $this->columnExistsCache[$cacheKey] = $exists;
 
         return $exists;

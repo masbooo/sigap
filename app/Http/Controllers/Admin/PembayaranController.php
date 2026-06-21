@@ -1,5 +1,10 @@
 <?php
 
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Reservasi;
+
 class PembayaranController extends Controller
 {
     public function index()

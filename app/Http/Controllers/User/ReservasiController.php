@@ -1,5 +1,15 @@
 <?php
 
+namespace App\Http\Controllers\User;
+
+use App\Http\Controllers\Controller;
+use App\Models\Umkm;
+use App\Services\ReservationApplicationPdf;
+use App\Services\ReservationPaymentPdf;
+use App\Supports\Payment\PaymentTestGateway;
+use DateTime;
+use Throwable;
+
 class ReservasiController extends Controller
 {
     public function index(?string $editId = null)
@@ -88,7 +98,14 @@ class ReservasiController extends Controller
             return;
         }
 
-        $document = $this->buildReservationPaymentDocumentData($user, $reservation, $method);
+        $payment = $this->paymentGateway()->findActivePayment($reservationId, $method);
+        if ($payment === null) {
+            $_SESSION['error'] = 'Metode pembayaran belum diproses atau sudah kedaluwarsa';
+            $this->redirect('/user/reservasi');
+            return;
+        }
+
+        $document = $this->buildReservationPaymentDocumentData($user, $reservation, $method, $payment);
         $viewData = [
             'title' => $method === 'va' ? 'Preview Virtual Account' : 'Preview QRIS',
             'document' => $document,
@@ -143,6 +160,68 @@ class ReservasiController extends Controller
         $this->view('user.reservasi.partials.invoice', $viewData);
     }
 
+    public function processPaymentMethod()
+    {
+        $user = $this->requireAuthenticatedUser();
+        if ($user === null) {
+            return;
+        }
+
+        verify_csrf();
+
+        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $method = $this->normalizePaymentDocumentMethod((string) ($_POST['method'] ?? ''));
+
+        if ($reservationId <= 0 || $method === '') {
+            $this->respondReservationPaymentJson(false, 'Metode pembayaran yang dipilih tidak valid', [], 422);
+        }
+
+        if ($method !== 'va') {
+            $this->respondReservationPaymentJson(false, 'Metode QRIS belum tersedia untuk mode testing saat ini', [], 422);
+        }
+
+        $reservation = $this->findUserPaymentReservation($reservationId, $user);
+        if ($reservation === null) {
+            return;
+        }
+
+        try {
+            $payment = $this->paymentGateway()->requestVirtualAccount($reservation);
+        } catch (Throwable $exception) {
+            $this->respondReservationPaymentJson(false, $exception->getMessage() ?: 'Virtual Account gagal dibuat', [], 500);
+        }
+
+        $this->respondReservationPaymentJson(true, 'Virtual Account berhasil dibuat', [
+            'payment' => $this->buildReservationPaymentState($user, $reservation, $payment),
+        ]);
+    }
+
+    public function revisePaymentMethod()
+    {
+        $user = $this->requireAuthenticatedUser();
+        if ($user === null) {
+            return;
+        }
+
+        verify_csrf();
+
+        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        if ($reservationId <= 0) {
+            $this->respondReservationPaymentJson(false, 'Reservasi pembayaran tidak valid', [], 422);
+        }
+
+        $reservation = $this->findUserPaymentReservation($reservationId, $user);
+        if ($reservation === null) {
+            return;
+        }
+
+        $this->paymentGateway()->cancelActivePayments($reservationId);
+
+        $this->respondReservationPaymentJson(true, 'Metode pembayaran berhasil direvisi', [
+            'payment' => $this->buildEmptyReservationPaymentState($reservation),
+        ]);
+    }
+
     public function store()
     {
         $user = $this->requireAuthenticatedUser();
@@ -152,7 +231,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        require_once BASE_PATH . '/app/helpers/upload_helper.php';
+        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
 
         $userModel = $this->model('User');
         $reservasiModel = $this->model('Reservasi');
@@ -341,7 +420,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        require_once BASE_PATH . '/app/helpers/upload_helper.php';
+        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
 
         $userModel = $this->model('User');
         $reservasiModel = $this->model('Reservasi');
@@ -663,6 +742,8 @@ class ReservasiController extends Controller
             return;
         }
 
+        $this->paymentGateway()->cancelActivePayments($reservationId);
+
         if ($this->shouldDeleteReservationIdentityFile((string) ($reservation['id_path'] ?? ''))) {
             $this->deleteUploadedFile((string) ($reservation['id_path'] ?? ''));
         }
@@ -715,6 +796,8 @@ class ReservasiController extends Controller
             $this->redirect('/user/reservasi');
             return;
         }
+
+        $this->paymentGateway()->cancelActivePayments($reservationId);
 
         $_SESSION['success'] = 'Reservasi berhasil dibatalkan';
         $this->redirect('/user/reservasi');
@@ -821,8 +904,11 @@ class ReservasiController extends Controller
         }
 
         $minBookingDate = (new DateTime('today'))->modify('+14 days')->format('Y-m-d');
-        $myReservations = $this->appendReservationFileUrls(
-            $reservasiModel->byUserDetailed((int) $user['id'])
+        $myReservations = $this->appendReservationPaymentStates(
+            $user,
+            $this->appendReservationFileUrls(
+                $reservasiModel->byUserDetailed((int) $user['id'])
+            )
         );
 
         return [
@@ -866,6 +952,24 @@ class ReservasiController extends Controller
                 ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
                 : '';
             $reservation['notes'] = $this->normalizeReservationNotesForUser($reservation['notes'] ?? null);
+        }
+        unset($reservation);
+
+        return $reservations;
+    }
+
+    private function appendReservationPaymentStates(array $user, array $reservations): array
+    {
+        $gateway = $this->paymentGateway();
+
+        foreach ($reservations as &$reservation) {
+            $payment = $gateway->findActivePayment((int) ($reservation['id'] ?? 0));
+            $reservation = array_merge(
+                $reservation,
+                $payment !== null
+                    ? $this->buildReservationPaymentState($user, $reservation, $payment)
+                    : $this->buildEmptyReservationPaymentState($reservation)
+            );
         }
         unset($reservation);
 
@@ -1175,13 +1279,116 @@ class ReservasiController extends Controller
         return base_url('user/reservasi/permohonan/cetak');
     }
 
-    private function buildReservationPaymentDocumentData(array $user, array $reservation, string $method): array
+    private function paymentGateway(): PaymentTestGateway
+    {
+        return new PaymentTestGateway();
+    }
+
+    private function findUserPaymentReservation(int $reservationId, array $user): ?array
+    {
+        if ($reservationId <= 0) {
+            $this->respondReservationPaymentJson(false, 'Reservasi pembayaran tidak valid', [], 422);
+        }
+
+        $reservasiModel = $this->model('Reservasi');
+        $reservation = $reservasiModel->findDetailed($reservationId);
+
+        if (!$reservation || (int) ($reservation['user_id'] ?? 0) !== (int) ($user['id'] ?? 0)) {
+            $this->respondReservationPaymentJson(false, 'Data reservasi tidak ditemukan', [], 404);
+        }
+
+        if (!reservation_status_matches($reservation['status'] ?? '', ['MENUNGGU PEMBAYARAN'])) {
+            $this->respondReservationPaymentJson(false, 'Pembayaran hanya dapat diproses untuk reservasi berstatus Menunggu Pembayaran', [], 422);
+        }
+
+        return $reservation;
+    }
+
+    private function buildReservationPaymentState(array $user, array $reservation, array $payment): array
+    {
+        $method = $this->paymentGateway()->methodKey($payment);
+
+        if ($method === '') {
+            return $this->buildEmptyReservationPaymentState($reservation);
+        }
+
+        $document = $this->buildReservationPaymentDocumentData($user, $reservation, $method, $payment);
+        $reservationId = (int) ($reservation['id'] ?? $payment['reservation_id'] ?? 0);
+        $paymentCode = trim((string) ($payment['payment_code'] ?? ''));
+        $expiryValue = trim((string) ($payment['expired_at'] ?? ''));
+        $expiryLabel = $method === 'va'
+            ? (string) ($document['va_expiry_label'] ?? '')
+            : (string) ($document['qris_expiry_label'] ?? '');
+
+        return [
+            'id' => $reservationId,
+            'status' => reservation_status_display_key($reservation['status'] ?? ''),
+            'request_id' => (string) ($reservation['request_id'] ?? ''),
+            'order_id' => (string) ($reservation['order_id'] ?? ''),
+            'total_price' => (float) ($reservation['total_price'] ?? $payment['amount'] ?? 0),
+            'payment_method_key' => $method,
+            'payment_method_label' => $this->formatReservationPaymentMethodLabel($method),
+            'payment_provider' => trim((string) ($payment['provider'] ?? '')) ?: 'BANK JATIM',
+            'payment_code_value' => $paymentCode,
+            'payment_qris_url' => trim((string) ($payment['qris_url'] ?? '')),
+            'payment_expired_at' => $expiryValue,
+            'payment_expiry_label' => trim($expiryLabel),
+            'payment_preview_url' => $this->buildPaymentDocumentPreviewUrl($reservationId, $document),
+            'payment_download_url' => $this->buildPaymentDocumentPreviewUrl($reservationId, $document, true),
+        ];
+    }
+
+    private function buildEmptyReservationPaymentState(array $reservation): array
+    {
+        return [
+            'id' => (int) ($reservation['id'] ?? 0),
+            'status' => reservation_status_display_key($reservation['status'] ?? ''),
+            'request_id' => (string) ($reservation['request_id'] ?? ''),
+            'order_id' => (string) ($reservation['order_id'] ?? ''),
+            'total_price' => (float) ($reservation['total_price'] ?? 0),
+            'payment_method_key' => '',
+            'payment_method_label' => '',
+            'payment_provider' => '',
+            'payment_code_value' => '',
+            'payment_qris_url' => '',
+            'payment_expired_at' => '',
+            'payment_expiry_label' => '',
+            'payment_preview_url' => '',
+            'payment_download_url' => '',
+        ];
+    }
+
+    private function formatReservationPaymentMethodLabel(string $method): string
+    {
+        return match ($this->normalizePaymentDocumentMethod($method)) {
+            'va' => 'Virtual Account (VA)',
+            'qris' => 'QRIS',
+            default => '',
+        };
+    }
+
+    private function respondReservationPaymentJson(bool $success, string $message, array $payload = [], int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json; charset=utf-8');
+
+        echo json_encode(array_merge([
+            'success' => $success,
+            'message' => $message,
+        ], $payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+
+    private function buildReservationPaymentDocumentData(array $user, array $reservation, string $method, ?array $payment = null): array
     {
         $createdAt = $this->resolveDateTimeValue((string) ($reservation['created_at'] ?? ''));
         $eventDate = $this->resolveDateTimeValue((string) ($reservation['start_date'] ?? ''));
         $now = new DateTime('now');
         $qrisExpiry = (clone $now)->modify('+15 minutes');
-        $vaExpiry = $this->buildReservationVaExpiryDate($eventDate);
+        $paymentExpiry = $this->resolveDateTimeValue((string) ($payment['expired_at'] ?? $reservation['payment_expired_at'] ?? ''));
+        $vaExpiry = $paymentExpiry ?? $this->buildReservationVaExpiryDate($eventDate);
+        $paymentCode = trim((string) ($payment['payment_code'] ?? $reservation['payment_code_value'] ?? ''));
+        $paymentProvider = trim((string) ($payment['provider'] ?? $reservation['payment_provider'] ?? ''));
         $totalPrice = (float) ($reservation['total_price'] ?? 0);
         $reservationCode = $this->resolveReservationDocumentCode($reservation);
         $requesterName = trim((string) ($reservation['user_name'] ?? '')) !== ''
@@ -1226,8 +1433,10 @@ class ReservasiController extends Controller
             'tarif_sewa_label' => number_format($totalPrice, 0, ',', '.'),
             'tarif_overtime_label' => '-',
             'total_payment_label' => 'Rp ' . number_format($totalPrice, 0, ',', '.'),
-            'virtual_account_number' => $this->buildReservationVirtualAccountNumber($reservation, $createdAt),
-            'va_bank_name' => 'Bank Jatim',
+            'virtual_account_number' => $paymentCode !== ''
+                ? $paymentCode
+                : $this->buildReservationVirtualAccountNumber($reservation, $eventDate ?? $createdAt),
+            'va_bank_name' => $paymentProvider !== '' ? $paymentProvider : 'Bank Jatim',
             'va_expiry_label' => $vaExpiry !== null
                 ? $this->formatIndonesianDateTimeWithZoneLabel($vaExpiry, 'WIB')
                 : '-',
@@ -1267,12 +1476,19 @@ class ReservasiController extends Controller
 
     private function buildReservationVirtualAccountNumber(array $reservation, ?DateTime $referenceDate = null): string
     {
+        $dateValue = trim((string) ($reservation['start_date'] ?? ''));
+        if ($dateValue !== '') {
+            $reservationDate = $this->resolveDateTimeValue($dateValue);
+            if ($reservationDate instanceof DateTime) {
+                $referenceDate = $reservationDate;
+            }
+        }
+
         $referenceDate = $referenceDate ?? new DateTime('now');
-        $reservationId = (int) ($reservation['id'] ?? 0);
 
         return '1030801'
             . $referenceDate->format('ymd')
-            . str_pad((string) $reservationId, 6, '0', STR_PAD_LEFT);
+            . str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
 
     private function buildReservationInvoiceNumber(array $reservation, ?DateTime $referenceDate = null): string
@@ -1412,9 +1628,7 @@ SVG;
 
     private function renderViewToString(string $view, array $data = []): string
     {
-        ob_start();
-        View::render($view, $data);
-        return (string) ob_get_clean();
+        return view($view, $data)->render();
     }
 
     private function buildingHasUmkmReservationOptions(Umkm $umkmModel, int $buildingId): bool

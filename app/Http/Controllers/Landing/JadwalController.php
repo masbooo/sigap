@@ -1,5 +1,11 @@
 <?php
 
+namespace App\Http\Controllers\Landing;
+
+use App\Http\Controllers\Controller;
+use DateTime;
+use Throwable;
+
 class JadwalController extends Controller
 {
     public function index()

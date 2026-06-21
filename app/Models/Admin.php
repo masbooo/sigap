@@ -1,5 +1,10 @@
 <?php
 
+namespace App\Models;
+
+use Illuminate\Support\Facades\DB;
+use PDO;
+
 class Admin
 {
     protected PDO $db;
@@ -7,7 +12,7 @@ class Admin
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $this->db = DB::connection()->getPdo();
     }
 
     public function findForLogin(string $username): ?array

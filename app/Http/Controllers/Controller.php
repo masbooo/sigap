@@ -3,23 +3,52 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Contracts\Support\Responsable;
 use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 abstract class Controller extends BaseController
 {
     protected function model(string $model): object
     {
-        $modelPath = base_path('app/Models/' . $model . '.php');
+        $modelClass = 'App\\Models\\' . ltrim($model, '\\');
 
-        if (is_file($modelPath)) {
-            require_once $modelPath;
-        }
-
-        if (!class_exists($model)) {
+        if (!class_exists($modelClass)) {
             throw new InvalidArgumentException("Model [{$model}] tidak ditemukan.");
         }
 
-        return new $model();
+        return app($modelClass);
+    }
+
+    /**
+     * Menjaga controller lama yang masih menulis output secara langsung tetap
+     * kompatibel saat dipanggil oleh dispatcher controller Laravel.
+     */
+    public function callAction($method, $parameters): mixed
+    {
+        ob_start();
+
+        try {
+            $result = parent::callAction($method, $parameters);
+            $output = ob_get_clean();
+        } catch (Throwable $exception) {
+            if (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            throw $exception;
+        }
+
+        if ($result instanceof Response) {
+            return $result;
+        }
+
+        if ($result instanceof Responsable) {
+            return $result->toResponse(request());
+        }
+
+        return $result ?? response($output);
     }
 
     protected function view(string $view, array $data = []): void

@@ -3300,7 +3300,7 @@ function initUserReservationPage() {
             return null;
         }
 
-        statusKey = String(item.status || '').trim().toUpperCase();
+        statusKey = getNormalizedHistoryStatusKey(item.status || '');
         paymentMethod = normalizeReservationPaymentMethod(item.payment_method_key);
         paymentExpiry = parseReservationDateTime(item.payment_expired_at);
         paymentIsAvailable = statusKey === 'MENUNGGU PEMBAYARAN';
@@ -4003,9 +4003,9 @@ function initUserReservationPage() {
         bootstrap.Modal.getOrCreateInstance(modalEl).show();
     }
 
-    function openReservationPaymentSelectedMethod(button) {
+    function openReservationPaymentSelectedMethod(button, selectedItem) {
         var reservationId = String(button && button.getAttribute('data-reservation-id') ? button.getAttribute('data-reservation-id') : '').trim();
-        var item = historyReservationMap[reservationId] || null;
+        var item = selectedItem || historyReservationMap[reservationId] || null;
         var method = item ? normalizeReservationPaymentMethod(item.payment_method_key) : '';
         var urls = buildReservationPaymentUrls(button, item, method);
 
