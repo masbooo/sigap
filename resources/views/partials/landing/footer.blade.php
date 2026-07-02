@@ -104,7 +104,7 @@ background: {{ $status === 'cloud' ? '#16a34a' : '#dc2626' }}; color:white;">
 <script src="{{ asset_url('assets/main/js/umkm.js') }}" defer></script>
 <script src="{{ asset_url('assets/main/js/kontak.js') }}" defer></script>
 <script src="{{ asset_url('assets/main/js/pjax.js') }}" defer></script>
-<script src="{{ asset_url('assets/main/js/navbar-state.js') }}" defer></script>
+<script src="{{ asset_url('assets/main/js/navbar-state.js') }}?v=navbar-state-v2" defer></script>
 
 <!-- ICONS -->
 <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>

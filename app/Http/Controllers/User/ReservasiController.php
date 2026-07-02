@@ -231,7 +231,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
+        require_once base_path('app/Supports/Upload/UploadFile.php');
 
         $userModel = $this->model('User');
         $reservasiModel = $this->model('Reservasi');
@@ -420,7 +420,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
+        require_once base_path('app/Supports/Upload/UploadFile.php');
 
         $userModel = $this->model('User');
         $reservasiModel = $this->model('Reservasi');

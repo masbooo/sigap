@@ -56,6 +56,9 @@
                     <li class="nav-item">
                         <a class="nav-link landing-navbar-link fs-4 fw-bold text-dark link-primary" href="{{ base_url('kontak') }}">Kontak</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link landing-navbar-link fs-4 fw-bold text-dark link-primary" href="{{ base_url('faq') }}">Tanya</a>
+                    </li>
                 </ul>
 
                 <div class="landing-login-wrap">
@@ -103,6 +106,9 @@
             </li>
             <li class="mb-2">
                 <a class="landing-navbar-link fs-4 d-block w-100 py-2 text-dark link-primary" href="{{ base_url('kontak') }}">Kontak</a>
+            </li>
+            <li class="mb-2">
+                <a class="landing-navbar-link fs-4 d-block w-100 py-2 text-dark link-primary" href="{{ base_url('faq') }}">Tanya</a>
             </li>
             <li class="mt-2 landing-offcanvas-login">
                 <a

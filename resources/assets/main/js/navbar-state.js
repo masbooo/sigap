@@ -1,5 +1,7 @@
 (function () {
     const NAV_LINKS = '.header-fp .landing-navbar-link, #offcanvasRight .landing-navbar-link';
+    const OFFCANVAS_SELECTOR = '#offcanvasRight';
+    const OFFCANVAS_LINKS = '#offcanvasRight a[href]';
 
     function normalizePath(path) {
         if (!path) return '/';
@@ -62,12 +64,29 @@
         return !!link && link.matches(NAV_LINKS) && link.dataset.currentPageLink === 'true';
     }
 
+    function closeLandingOffcanvas() {
+        const offcanvas = document.querySelector(OFFCANVAS_SELECTOR);
+        if (!offcanvas || !offcanvas.classList.contains('show')) return;
+
+        if (window.bootstrap && bootstrap.Offcanvas) {
+            const instance = bootstrap.Offcanvas.getInstance(offcanvas) || bootstrap.Offcanvas.getOrCreateInstance(offcanvas);
+            instance.hide();
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', setNavbarActive);
     document.addEventListener('pjax:load', setNavbarActive);
     window.addEventListener('pageshow', setNavbarActive);
     window.addEventListener('popstate', function () {
         setTimeout(setNavbarActive, 0);
     });
+
+    document.addEventListener('click', function (e) {
+        const offcanvasLink = e.target.closest(OFFCANVAS_LINKS);
+        if (offcanvasLink) {
+            closeLandingOffcanvas();
+        }
+    }, true);
 
     document.addEventListener('click', function (e) {
         const link = e.target.closest(NAV_LINKS);

@@ -461,22 +461,17 @@
                     </div>
 
                     <div class="col-md-7">
-                        <div class="row g-3">
+                        <div class="row g-3 umkm-modal-detail-list">
                             @include('partials.modal.detail-info-card', [
-                                'detailInfoLabel' => 'Lokasi UMKM',
+                                'detailInfoColClass' => 'col-12',
+                                'detailInfoLabel' => 'Wilayah UMKM',
                                 'detailInfoValueId' => 'umkm-detail-home-location',
                                 'detailInfoIcon' => 'ti ti-map-pin',
                                 'detailInfoTone' => 'bg-warning-subtle text-warning',
                             ])
 
                             @include('partials.modal.detail-info-card', [
-                                'detailInfoLabel' => 'Lokasi GSG Terkait',
-                                'detailInfoValueId' => 'umkm-detail-gsg-districts',
-                                'detailInfoIcon' => 'ti ti-world',
-                                'detailInfoTone' => 'bg-primary-subtle text-primary',
-                            ])
-
-                            @include('partials.modal.detail-info-card', [
+                                'detailInfoColClass' => 'col-12',
                                 'detailInfoLabel' => 'Gedung Terkait',
                                 'detailInfoValueId' => 'umkm-detail-buildings',
                                 'detailInfoIcon' => 'ti ti-building',
@@ -484,29 +479,29 @@
                             ])
 
                             @include('partials.modal.detail-info-card', [
-                                'detailInfoLabel' => 'Nomor Telepon',
+                                'detailInfoColClass' => 'col-12',
+                                'detailInfoLabel' => 'Alamat UMKM',
+                                'detailInfoValueId' => 'umkm-detail-address',
+                                'detailInfoIcon' => 'ti ti-directions',
+                                'detailInfoTone' => 'bg-success-subtle text-success',
+                            ])
+
+                            @include('partials.modal.detail-info-card', [
+                                'detailInfoColClass' => 'col-12',
+                                'detailInfoLabel' => 'Kontak UMKM',
                                 'detailInfoValueId' => 'umkm-detail-phone',
                                 'detailInfoIcon' => 'ti ti-phone',
                                 'detailInfoTone' => 'bg-info-subtle text-info',
                             ])
 
                             @include('partials.modal.detail-info-card', [
-                                'detailInfoLabel' => 'Alamat',
-                                'detailInfoValueId' => 'umkm-detail-address',
-                                'detailInfoIcon' => 'ti ti-directions',
-                                'detailInfoTone' => 'bg-success-subtle text-success',
+                                'detailInfoColClass' => 'col-12',
+                                'detailInfoLabel' => 'Deskripsi',
+                                'detailInfoValueId' => 'umkm-detail-description',
+                                'detailInfoIcon' => 'ti ti-file-text',
+                                'detailInfoTone' => 'bg-secondary-subtle text-secondary',
                             ])
                         </div>
-                    </div>
-
-                    <div class="col-12">
-                        @include('partials.modal.detail-info-card', [
-                            'detailInfoColClass' => 'col-12',
-                            'detailInfoLabel' => 'Deskripsi',
-                            'detailInfoValueId' => 'umkm-detail-description',
-                            'detailInfoIcon' => 'ti ti-file-text',
-                            'detailInfoTone' => 'bg-secondary-subtle text-secondary',
-                        ])
                     </div>
                 </div>
             </div>

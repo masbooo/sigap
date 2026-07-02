@@ -81,6 +81,7 @@ Route::get('jadwal', [Landing\JadwalController::class, 'index'])->name('jadwal.i
 Route::get('umkm', [Landing\UmkmController::class, 'index'])->name('umkm.index');
 Route::get('umkm/{page}', [Landing\UmkmController::class, 'index'])->whereNumber('page')->name('umkm.page');
 Route::get('kontak', [Landing\KontakController::class, 'index'])->name('kontak.index');
+Route::get('faq', [Landing\FaqController::class, 'index'])->name('faq.index');
 Route::get('captcha', [CaptchaController::class, 'image'])->name('captcha');
 
 Route::controller(User\AuthController::class)->group(function (): void {

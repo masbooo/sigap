@@ -16,6 +16,14 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('kalender', [Admin\DashboardController::class, 'calendar'])->name('calendar');
         Route::get('pengaturan/akses', [Admin\DashboardController::class, 'accessSettings'])->name('access.index');
         Route::post('pengaturan/akses', [Admin\DashboardController::class, 'saveAccessSettings'])->name('access.store');
+        Route::get('pengaturan/user', [Admin\UserController::class, 'index'])->name('user.index');
+        Route::post('pengaturan/user', [Admin\UserController::class, 'store'])->name('user.store');
+        Route::post('pengaturan/user/update', [Admin\UserController::class, 'update'])->name('user.update');
+        Route::post('pengaturan/user/hapus', [Admin\UserController::class, 'destroy'])->name('user.destroy');
+        Route::get('pengaturan/admin', [Admin\AdminAccountController::class, 'index'])->name('admin-account.index');
+        Route::post('pengaturan/admin', [Admin\AdminAccountController::class, 'store'])->name('admin-account.store');
+        Route::post('pengaturan/admin/update', [Admin\AdminAccountController::class, 'update'])->name('admin-account.update');
+        Route::post('pengaturan/admin/hapus', [Admin\AdminAccountController::class, 'destroy'])->name('admin-account.destroy');
 
         Route::get('laporan/rating', [Admin\LaporanController::class, 'rating'])->name('report.rating');
         Route::get('laporan/rating/gedung', [Admin\LaporanController::class, 'gedung'])->name('report.rating.building');

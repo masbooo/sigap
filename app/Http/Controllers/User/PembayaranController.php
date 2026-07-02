@@ -52,7 +52,7 @@ class PembayaranController extends Controller
         }
 
         verify_csrf();
-        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
+        require_once base_path('app/Supports/Upload/UploadFile.php');
 
         $reservationId = (int) ($_POST['reservation_id'] ?? 0);
         if ($reservationId <= 0) {

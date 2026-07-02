@@ -69,7 +69,7 @@ class ProfilController extends Controller
         }
 
         verify_csrf_or_redirect('/user/profil', 'Sesi Anda telah habis. Silakan ulangi upload foto profil.');
-        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
+        require_once base_path('app/Supports/Upload/UploadFile.php');
 
         $userModel = $this->model('User');
         $file = $_FILES['profile_photo'] ?? null;

@@ -90,6 +90,24 @@ class User
         return (bool) $stmt->fetch();
     }
 
+    public function usernameExistsForOther(string $username, int $excludeId = 0): bool
+    {
+        $stmt = $this->db->prepare("
+            SELECT id
+            FROM user
+            WHERE username = :username
+              AND id <> :id
+            LIMIT 1
+        ");
+
+        $stmt->execute([
+            ':username' => $username,
+            ':id' => $excludeId,
+        ]);
+
+        return (bool) $stmt->fetch();
+    }
+
     public function findByNik(string $nik): ?array
     {
         $stmt = $this->db->prepare("
@@ -272,6 +290,138 @@ class User
         ");
 
         return $stmt->fetchAll() ?: [];
+    }
+
+    public function getManagedUsers(): array
+    {
+        $stmt = $this->db->query("
+            SELECT
+                u.id,
+                u.username,
+                u.name,
+                u.status,
+                u.phone,
+                u.nik,
+                u.district_id,
+                u.subdistrict_id,
+                u.last_login,
+                k.district AS district_name,
+                k.region AS district_region,
+                kl.subdistrict AS subdistrict_name
+            FROM user u
+            LEFT JOIN kecamatan k
+                ON k.id = u.district_id
+            LEFT JOIN kelurahan kl
+                ON kl.id = u.subdistrict_id
+            ORDER BY u.name ASC, u.username ASC
+        ");
+
+        return $stmt->fetchAll() ?: [];
+    }
+
+    public function createManagedAccount(array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            INSERT INTO user (
+                username,
+                password,
+                nik,
+                name,
+                address,
+                subdistrict_id,
+                district_id,
+                phone,
+                status,
+                created_at
+            ) VALUES (
+                :username,
+                :password,
+                :nik,
+                :name,
+                :address,
+                :subdistrict_id,
+                :district_id,
+                :phone,
+                :status,
+                NOW()
+            )
+        ");
+
+        return $stmt->execute([
+            ':username' => $data['username'],
+            ':password' => $data['password'],
+            ':nik' => $data['nik'] ?? null,
+            ':name' => $data['name'],
+            ':address' => $data['address'] ?? '',
+            ':subdistrict_id' => $data['subdistrict_id'] ?? null,
+            ':district_id' => $data['district_id'] ?? null,
+            ':phone' => $data['phone'] ?? '',
+            ':status' => $data['status'],
+        ]);
+    }
+
+    public function updateManagedAccount(int $id, array $data): bool
+    {
+        $assignments = [
+            'username = :username',
+            'name = :name',
+            'phone = :phone',
+            'status = :status',
+            'updated_at = NOW()',
+        ];
+
+        $params = [
+            ':username' => $data['username'],
+            ':name' => $data['name'],
+            ':phone' => $data['phone'] ?? '',
+            ':status' => $data['status'],
+            ':id' => $id,
+        ];
+
+        if (!empty($data['password'])) {
+            $assignments[] = 'password = :password';
+            $params[':password'] = $data['password'];
+        }
+
+        $stmt = $this->db->prepare("
+            UPDATE user
+            SET " . implode(",\n                ", $assignments) . "
+            WHERE id = :id
+        ");
+
+        return $stmt->execute($params);
+    }
+
+    public function deleteAccount(int $id): bool
+    {
+        try {
+            $stmt = $this->db->prepare("
+                DELETE FROM user
+                WHERE id = :id
+            ");
+
+            return $stmt->execute([
+                ':id' => $id,
+            ]);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    public function updateStatus(int $id, string $status): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE user
+            SET
+                status = :status,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            ':status' => $status,
+            ':id' => $id,
+        ]);
     }
 
     public function updateLastLogin(int $id): void

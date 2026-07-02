@@ -340,6 +340,36 @@
                     el.textContent = value && String(value).trim() !== '' ? value : '-';
                 }
 
+                function setWhatsappLink(id, value) {
+                    var el = document.getElementById(id);
+                    if (!el) return;
+
+                    var label = value && String(value).trim() !== '' ? String(value).trim() : '-';
+                    var digits = label.replace(/\D/g, '');
+
+                    el.textContent = '';
+
+                    if (label === '-' || digits === '') {
+                        el.textContent = '-';
+                        return;
+                    }
+
+                    if (digits.charAt(0) === '0') {
+                        digits = '62' + digits.slice(1);
+                    } else if (digits.charAt(0) === '8') {
+                        digits = '62' + digits;
+                    }
+
+                    var link = document.createElement('a');
+                    link.href = 'https://wa.me/' + digits;
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    link.className = 'umkm-contact-link';
+                    link.textContent = label;
+
+                    el.appendChild(link);
+                }
+
                 var imageEl = document.getElementById('umkm-detail-image');
                 var ratingEl = document.getElementById('umkm-detail-rating');
                 var imageSrc = trigger.getAttribute('data-image') || '';
@@ -353,11 +383,10 @@
                 setText('umkm-detail-owner', 'By ' + owner);
                 setText('umkm-detail-product', trigger.getAttribute('data-product') || 'UMKM');
                 setText('umkm-detail-home-location', trigger.getAttribute('data-home-location') || '-');
-                setText('umkm-detail-gsg-districts', trigger.getAttribute('data-gsg-districts') || '-');
                 setText('umkm-detail-buildings', trigger.getAttribute('data-buildings') || '-');
-                setText('umkm-detail-phone', trigger.getAttribute('data-phone') || '-');
                 setText('umkm-detail-address', trigger.getAttribute('data-address') || '-');
                 setText('umkm-detail-description', trigger.getAttribute('data-description') || '-');
+                setWhatsappLink('umkm-detail-phone', trigger.getAttribute('data-phone') || '-');
 
                 if (ratingEl) {
                     ratingEl.innerHTML = buildRatingMarkup(rating, reviewCount);

@@ -167,7 +167,7 @@ class DashboardController extends Controller
         }
 
         verify_csrf_or_redirect('/user/dasbor', 'Sesi Anda telah habis. Silakan ulangi simpan profil.');
-        require_once BASE_PATH . '/app/Supports/Upload/UploadFile.php';
+        require_once base_path('app/Supports/Upload/UploadFile.php');
 
         $userId = (int) $_SESSION['user']['id'];
         $userModel = $this->model('User');

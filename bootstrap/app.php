@@ -4,7 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-require_once __DIR__.'/../app/Supports/legacy.php';
+require_once __DIR__.'/../app/Supports/Legacy.php';
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
