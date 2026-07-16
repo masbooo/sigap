@@ -64,13 +64,6 @@ $ratingPendingCount = (int) ($ratingNotifications['pending_count'] ?? 0);
                         </a>
                     </li>
 
-                    <li class="sidebar-item">
-                        <a class="sidebar-link ajax-link" href="{{ base_url('user/faq') }}">
-                            <i class="ti ti-help"></i>
-                            <span class="hide-menu">FAQ</span>
-                        </a>
-                    </li>
-
                 </ul>
             </nav>
 

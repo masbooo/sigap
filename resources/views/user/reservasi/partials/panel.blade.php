@@ -692,7 +692,7 @@
                                         </div>
                                         <div class="d-flex flex-wrap gap-2">
                                             @if (!$isUmkmFollowUpMode)
-                                                <button type="button" class="btn btn-warning" id="reservation-print-button" @if ($profileIncomplete) disabled @endif>
+                                                <button type="button" class="btn btn-warning" id="reservation-print-button" data-reservation-print-toggle="application" data-print-state="ready" @if ($profileIncomplete) disabled @endif>
                                                     <b>CETAK PERMOHONAN</b>
                                                 </button>
                                             @endif

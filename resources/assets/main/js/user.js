@@ -2627,6 +2627,53 @@ function initUserReservationPage() {
         formEl.appendChild(input);
     }
 
+    function getReservationPrintSignature() {
+        return [
+            elements.buildingInput ? String(elements.buildingInput.value || '').trim() : '',
+            elements.startInput ? String(elements.startInput.value || '').trim() : '',
+            elements.event ? String(elements.event.value || '').trim() : '',
+            elements.estPerson ? String(elements.estPerson.value || '').trim() : '',
+            elements.session ? String(elements.session.value || '').trim() : '',
+            elements.startTime ? String(elements.startTime.value || '').trim() : '',
+            elements.endTime ? String(elements.endTime.value || '').trim() : '',
+            elements.umkm ? String(elements.umkm.value || '').trim() : ''
+        ].join('|');
+    }
+
+    function setReservationPrintButtonVisible(isVisible) {
+        if (!elements.printButton) {
+            return;
+        }
+
+        elements.printButton.hidden = !isVisible;
+        elements.printButton.classList.toggle('d-none', !isVisible);
+        elements.printButton.dataset.printState = isVisible ? 'ready' : 'printed';
+    }
+
+    function markReservationApplicationPrinted() {
+        if (!elements.form) {
+            return;
+        }
+
+        elements.form.dataset.sigapReservationPrintSignature = getReservationPrintSignature();
+        setReservationPrintButtonVisible(false);
+    }
+
+    function showReservationPrintButtonIfChanged() {
+        if (!elements.form || !elements.printButton) {
+            return;
+        }
+
+        var printedSignature = String(elements.form.dataset.sigapReservationPrintSignature || '');
+
+        if (printedSignature === '' || getReservationPrintSignature() === printedSignature) {
+            return;
+        }
+
+        elements.form.removeAttribute('data-sigap-reservation-print-signature');
+        setReservationPrintButtonVisible(true);
+    }
+
     function printReservationApplication() {
         var printUrl = reservation.printUrl ? String(reservation.printUrl).trim() : '';
         var csrfInput = elements.form ? elements.form.querySelector('input[name="_token"]') : null;
@@ -2693,6 +2740,7 @@ function initUserReservationPage() {
         document.body.appendChild(printForm);
         printForm.submit();
         document.body.removeChild(printForm);
+        markReservationApplicationPrinted();
     }
 
     function findRegion(regionValue) {
@@ -2863,6 +2911,8 @@ function initUserReservationPage() {
                 elements.selectionHint.textContent = 'Klik tanggal kosong pada kalender untuk mengisi tanggal reservasi.';
             }
         }
+
+        showReservationPrintButtonIfChanged();
     }
 
     function syncBuildingSelection() {
@@ -4312,6 +4362,7 @@ function initUserReservationPage() {
             elements.building.addEventListener('change', function () {
                 syncBuildingSelection();
                 renderFilteredUserCalendar();
+                showReservationPrintButtonIfChanged();
                 validateReservationForm(false);
             });
         }
@@ -4323,6 +4374,7 @@ function initUserReservationPage() {
                 }
 
                 syncSelectionSummary();
+                showReservationPrintButtonIfChanged();
                 validateReservationForm(false);
             });
         }
@@ -4333,6 +4385,8 @@ function initUserReservationPage() {
             field.addEventListener('change', function () {
                 if (field === elements.requestFile || field === elements.idFile) {
                     syncUploadPreview(field);
+                } else {
+                    showReservationPrintButtonIfChanged();
                 }
 
                 validateReservationForm(false);
@@ -4342,6 +4396,7 @@ function initUserReservationPage() {
         if (elements.session) {
             elements.session.addEventListener('change', function () {
                 syncSessionTimeFields();
+                showReservationPrintButtonIfChanged();
                 validateReservationForm(false);
             });
         }
@@ -4350,12 +4405,14 @@ function initUserReservationPage() {
             if (!field) return;
 
             field.addEventListener('change', function () {
+                showReservationPrintButtonIfChanged();
                 validateReservationForm(false);
             });
         });
 
         if (elements.estPerson) {
             elements.estPerson.addEventListener('input', function () {
+                showReservationPrintButtonIfChanged();
                 validateReservationForm(false);
             });
         }

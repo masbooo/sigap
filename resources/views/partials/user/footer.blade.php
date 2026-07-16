@@ -31,7 +31,7 @@
 
 <!-- JAVASCRIPT -->
 <script src="{{ asset_url('assets/main/js/ajax.js') }}"></script>
-<script src="{{ asset_url('assets/main/js/user.js') }}?v=user-core-v17"></script>
+<script src="{{ asset_url('assets/main/js/user.js') }}?v=user-core-v18"></script>
 
 <!-- ICONS -->
 <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
