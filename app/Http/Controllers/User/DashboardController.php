@@ -11,19 +11,15 @@ class DashboardController extends Controller
 
     public function index()
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return;
         }
 
         if (
-            ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' &&
-            isset($_POST['save_biodata']) &&
-            $_POST['save_biodata'] === '1'
+            request()->isMethod('post') &&
+            request('save_biodata') === '1'
         ) {
             $this->handleBiodataSubmit();
             return;
@@ -33,24 +29,22 @@ class DashboardController extends Controller
         $wilayahModel = $this->model('Wilayah');
         $reservasiModel = $this->model('Reservasi');
 
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) $sessionUser['id']);
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return;
         }
 
-        $oldBiodata = $_SESSION['old_biodata'] ?? [];
+        $oldBiodata = session('old_biodata', []);
         if (!empty($oldBiodata) && is_array($oldBiodata)) {
             $user = array_merge($user, $oldBiodata);
         }
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-
-        unset($_SESSION['error'], $_SESSION['success'], $_SESSION['old_biodata']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
+        session()->forget('old_biodata');
 
         $districts = $wilayahModel->getDistricts();
         $districtVillageMap = $wilayahModel->getDistrictVillageMap();
@@ -157,11 +151,8 @@ class DashboardController extends Controller
 
     private function handleBiodataSubmit(): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return;
         }
@@ -169,26 +160,25 @@ class DashboardController extends Controller
         verify_csrf_or_redirect('/user/dasbor', 'Sesi Anda telah habis. Silakan ulangi simpan profil.');
         require_once base_path('app/Supports/Upload/UploadFile.php');
 
-        $userId = (int) $_SESSION['user']['id'];
+        $userId = (int) $sessionUser['id'];
         $userModel = $this->model('User');
         $currentUser = $userModel->findById($userId);
 
         if (!$currentUser) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return;
         }
 
-        $nik = trim($_POST['nik'] ?? '');
-        $name = trim($_POST['name'] ?? '');
-        $gender = strtoupper(trim((string) ($_POST['gender'] ?? '')));
-        $address = trim($_POST['address'] ?? '');
-        $districtId = (int) ($_POST['district_id'] ?? 0);
-        $subdistrictId = (int) ($_POST['subdistrict_id'] ?? 0);
-        $phone = trim($_POST['phone'] ?? '');
+        $nik = trim((string) request('nik', ''));
+        $name = trim((string) request('name', ''));
+        $gender = strtoupper(trim((string) request('gender', '')));
+        $address = trim((string) request('address', ''));
+        $districtId = (int) request('district_id', 0);
+        $subdistrictId = (int) request('subdistrict_id', 0);
+        $phone = trim((string) request('phone', ''));
 
-        $_SESSION['old_biodata'] = [
+        session(['old_biodata' => [
             'nik' => $nik,
             'name' => $name,
             'gender' => $gender,
@@ -196,28 +186,28 @@ class DashboardController extends Controller
             'district_id' => $districtId,
             'subdistrict_id' => $subdistrictId,
             'phone' => $phone
-        ];
+        ]]);
 
         if ($nik === '' || $name === '' || $gender === '' || $address === '' || $phone === '' || $districtId <= 0 || $subdistrictId <= 0) {
-            $_SESSION['error'] = 'Semua field wajib diisi';
+            session(['error' => 'Semua field wajib diisi']);
             $this->redirect('/user/dasbor');
             return;
         }
 
         if (!in_array($gender, ['L', 'P'], true)) {
-            $_SESSION['error'] = 'Jenis kelamin wajib dipilih';
+            session(['error' => 'Jenis kelamin wajib dipilih']);
             $this->redirect('/user/dasbor');
             return;
         }
 
         if (!preg_match('/^[0-9]{16}$/', $nik)) {
-            $_SESSION['error'] = 'NIK harus 16 digit angka';
+            session(['error' => 'NIK harus 16 digit angka']);
             $this->redirect('/user/dasbor');
             return;
         }
 
         if (!preg_match('/^[0-9]{10,15}$/', $phone)) {
-            $_SESSION['error'] = 'Telp / HP harus 10-15 digit angka';
+            session(['error' => 'Telp / HP harus 10-15 digit angka']);
             $this->redirect('/user/dasbor');
             return;
         }
@@ -225,19 +215,19 @@ class DashboardController extends Controller
         $wilayahModel = $this->model('Wilayah');
 
         if (!$wilayahModel->districtExists($districtId)) {
-            $_SESSION['error'] = 'Kecamatan tidak valid';
+            session(['error' => 'Kecamatan tidak valid']);
             $this->redirect('/user/dasbor');
             return;
         }
 
         if (!$wilayahModel->villageBelongsToDistrict($subdistrictId, $districtId)) {
-            $_SESSION['error'] = 'Kelurahan tidak valid';
+            session(['error' => 'Kelurahan tidak valid']);
             $this->redirect('/user/dasbor');
             return;
         }
 
         if ($userModel->nikExistsForOther($nik, $userId)) {
-            $_SESSION['error'] = 'NIK sudah digunakan akun lain';
+            session(['error' => 'NIK sudah digunakan akun lain']);
             $this->redirect('/user/dasbor');
             return;
         }
@@ -247,7 +237,7 @@ class DashboardController extends Controller
         $identityValidationError = $this->validateIdentityUpload($identityFile, $currentIdentityPath !== '');
 
         if ($identityValidationError !== null) {
-            $_SESSION['error'] = $identityValidationError;
+            session(['error' => $identityValidationError]);
             $this->redirect('/user/dasbor');
             return;
         }
@@ -261,7 +251,7 @@ class DashboardController extends Controller
             $uploadedFilename = upload_file($identityFile, self::PROFILE_ID_UPLOAD_DIRECTORY);
 
             if ($uploadedFilename === null) {
-                $_SESSION['error'] = 'File KTP gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF';
+                session(['error' => 'File KTP gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF']);
                 $this->redirect('/user/dasbor');
                 return;
             }
@@ -285,7 +275,7 @@ class DashboardController extends Controller
                 $this->deleteUploadFile($newIdentityPath);
             }
 
-            $_SESSION['error'] = 'Gagal menyimpan profil. Silakan coba lagi';
+            session(['error' => 'Gagal menyimpan profil. Silakan coba lagi']);
             $this->redirect('/user/dasbor');
             return;
         }
@@ -298,9 +288,9 @@ class DashboardController extends Controller
 
         set_authenticated_user_session($freshUser);
 
-        unset($_SESSION['old_biodata']);
+        session()->forget('old_biodata');
 
-        $_SESSION['success'] = 'Profil berhasil disimpan';
+        session(['success' => 'Profil berhasil disimpan']);
         $this->redirect('/user/dasbor');
     }
 

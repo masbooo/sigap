@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Dokumen Pembayaran' }}</title>
-    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/main/css/styles.css') }}">
 </head>
 <body class="payment-preview-page">
     @php
@@ -136,6 +136,6 @@
             @endif
         </div>
     </main>
-    <script src="{{ asset_url('assets/main/js/view-bayar.js') }}"></script>
+    <script src="{{ asset('assets/main/js/view-bayar.js') }}"></script>
 </body>
 </html>

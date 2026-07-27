@@ -137,7 +137,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -157,7 +157,7 @@
                 $rawIcon = trim((string) ($card['icon'] ?? ''));
                 $isAbsoluteIconUrl = preg_match('~^(?:https?:)?//|^data:|^/~i', $rawIcon) === 1;
                 $isImagePath = preg_match('~\.(svg|png|jpe?g|gif|webp)(\?.*)?$~i', $rawIcon) === 1;
-                $iconSrc = base_url('assets/custom/images/svgs/icon-connect.svg');
+                $iconSrc = asset('assets/custom/images/svgs/icon-connect.svg');
                 $iconClass = $rawIcon !== '' && !$isAbsoluteIconUrl && !$isImagePath
                     ? $rawIcon
                     : 'ti ti-layout-dashboard';
@@ -166,7 +166,7 @@
                     if ($isAbsoluteIconUrl) {
                         $iconSrc = $rawIcon;
                     } elseif ($isImagePath) {
-                        $iconSrc = base_url(ltrim(preg_replace('~^\./~', '', $rawIcon), '/'));
+                        $iconSrc = url(ltrim(preg_replace('~^\./~', '', $rawIcon), '/'));
                     }
                 }
 

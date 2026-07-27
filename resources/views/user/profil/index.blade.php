@@ -44,7 +44,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
                     <p class="card-subtitle mb-4">Silakan merubah foto profil Anda disini</p>
 
                     <form
-                        action="{{ base_url('user/profil/foto') }}"
+                        action="{{ url('user/profil/foto') }}"
                         method="POST"
                         enctype="multipart/form-data"
                         id="profilePhotoUploadForm"
@@ -84,7 +84,7 @@
                     </form>
 
                     <form
-                        action="{{ base_url('user/profil/foto/reset') }}"
+                        action="{{ url('user/profil/foto/reset') }}"
                         method="POST"
                         id="profilePhotoResetForm"
                         class="d-none"
@@ -124,7 +124,7 @@
                 <div class="card-body p-4">
                     <h4 class="card-title">Rubah Password</h4>
                     <p class="card-subtitle mb-4">Silakan merubah password Anda disini</p>
-                    <form action="{{ base_url('user/profil/password') }}" method="POST" autocomplete="off" id="profilePasswordForm" novalidate>
+                    <form action="{{ url('user/profil/password') }}" method="POST" autocomplete="off" id="profilePasswordForm" novalidate>
                         {!! csrf_field() !!}
 
                         <div class="mb-3 password-field">

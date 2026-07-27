@@ -3,7 +3,7 @@
     $paginationItems = $paginationItems ?? [];
     $currentPage = (int) ($currentPage ?? 1);
     $buildPageUrl = $buildPageUrl ?? static function (int $page): string {
-        return $page > 1 ? base_url('umkm/' . $page) : base_url('umkm');
+        return $page > 1 ? url('umkm/' . $page) : url('umkm');
     };
 @endphp
 

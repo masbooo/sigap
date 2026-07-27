@@ -17,7 +17,7 @@ class RatingController extends Controller
 
         $userModel = $this->model('User');
         if ($userModel->hasPendingProfileStatus($user)) {
-            $_SESSION['error'] = 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum membuka menu rating';
+            session(['error' => 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum membuka menu rating']);
             $this->redirect('/user/dasbor');
             return;
         }
@@ -26,11 +26,9 @@ class RatingController extends Controller
         $pageData = $ratingModel->getUserRatingPageData((int) $user['id']);
 
         $messages = [
-            'success' => $_SESSION['success'] ?? '',
-            'error' => $_SESSION['error'] ?? '',
+            'success' => session()->pull('success', ''),
+            'error' => session()->pull('error', ''),
         ];
-
-        unset($_SESSION['success'], $_SESSION['error']);
 
         $this->view('user.rating.index', [
             'title' => 'Rating Saya - SIGAP',
@@ -50,15 +48,15 @@ class RatingController extends Controller
         verify_csrf();
 
         $ratingModel = $this->model('Rating');
-        $result = $ratingModel->saveUserRating((int) $user['id'], $_POST);
+        $result = $ratingModel->saveUserRating((int) $user['id'], request()->all());
 
         if (empty($result['success'])) {
-            $_SESSION['error'] = (string) ($result['message'] ?? 'Rating gagal disimpan.');
+            session(['error' => (string) ($result['message'] ?? 'Rating gagal disimpan.')]);
             $this->redirect('/user/rating');
             return;
         }
 
-        $_SESSION['success'] = (string) ($result['message'] ?? 'Rating berhasil disimpan.');
+        session(['success' => (string) ($result['message'] ?? 'Rating berhasil disimpan.')]);
 
         $anchor = trim((string) ($result['anchor'] ?? ''));
         $redirectPath = '/user/rating';
@@ -72,21 +70,17 @@ class RatingController extends Controller
 
     private function requireAuthenticatedUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return null;
         }
 
         $userModel = $this->model('User');
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) $sessionUser['id']);
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return null;
         }

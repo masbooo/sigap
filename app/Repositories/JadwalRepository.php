@@ -1,45 +1,36 @@
 <?php
 
-namespace App\Models;
+namespace App\Repositories;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use PDO;
 
-class Jadwal
+class JadwalRepository extends LegacyRepository
 {
-    protected PDO $db;
-    protected array $columnExistsCache = [];
+    protected $table = 'reservasi';
 
-    public function __construct()
-    {
-        $this->db = DB::connection()->getPdo();
-    }
+    protected array $columnExistsCache = [];
 
     public function getFilterData(): array
     {
-        $sql = "
-            SELECT
-                w.region,
-                k.id AS district_id,
-                k.district,
-                g.id AS building_id,
-                g.building_name,
-                g.capacity
-            FROM gedung g
-            INNER JOIN kecamatan k
-                ON k.id = g.district_id
-            INNER JOIN wilayah w
-                ON w.region = k.region
-            WHERE g.status = 'AKTIF'
-            ORDER BY
-                FIELD(w.region, 'Pusat', 'Timur', 'Selatan', 'Barat', 'Utara'),
-                k.district ASC,
-                g.building_name ASC
-        ";
-
-        $stmt = $this->db->query($sql);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->rows(
+            $this->table('gedung as g')
+                ->select([
+                    'w.region',
+                    'k.id AS district_id',
+                    'k.district',
+                    'g.id AS building_id',
+                    'g.building_name',
+                    'g.capacity',
+                ])
+                ->join('kecamatan as k', 'k.id', '=', 'g.district_id')
+                ->join('wilayah as w', 'w.region', '=', 'k.region')
+                ->where('g.status', 'AKTIF')
+                ->orderByRaw("FIELD(w.region, 'Pusat', 'Timur', 'Selatan', 'Barat', 'Utara')")
+                ->orderBy('k.district')
+                ->orderBy('g.building_name')
+                ->get()
+        );
 
         $grouped = [];
 
@@ -93,58 +84,45 @@ class Jadwal
         }
 
         $queryStatuses = $this->normalizeStatusesForQuery($normalizedStatuses);
-        $placeholders = [];
-        $params = [];
-
-        foreach ($queryStatuses as $index => $status) {
-            $placeholder = ':status_' . $index;
-            $placeholders[] = $placeholder;
-            $params[$placeholder] = $status;
-        }
-
         $sessionDisplayNameSql = $this->getSessionDisplayNameSql('r');
         $statusSelectSql = $this->getReservationStatusSelectSql('r', 'sr');
-        $statusJoinSql = $this->getReservationStatusJoinSql('r', 'sr');
         $statusFilterSql = $this->getReservationStatusFilterSql('r', 'sr');
         $notesSelectSql = $this->getSelectColumnOrDefaultSql('reservasi', 'r', 'notes', "''", 'notes');
-        $sql = "
-            SELECT
-                r.id,
-                r.user_id,
-                r.start_date,
-                r.end_date,
-                {$statusSelectSql},
-                {$notesSelectSql},
-                r.est_person,
-                r.building_id,
-                r.event_id,
-                r.start_time,
-                r.end_time,
-                g.building_name,
-                k.district,
-                w.region,
-                {$sessionDisplayNameSql} AS session_name,
-                a.event_name,
-                u.name AS order_name
-            FROM reservasi r
-            {$statusJoinSql}
-            INNER JOIN gedung g
-                ON g.id = r.building_id
-            INNER JOIN kecamatan k
-                ON k.id = g.district_id
-            INNER JOIN wilayah w
-                ON w.region = k.region
-            LEFT JOIN acara a
-                ON a.id = r.event_id
-            LEFT JOIN user u
-                ON u.id = r.user_id
-            WHERE {$statusFilterSql} IN (" . implode(', ', $placeholders) . ")
-            ORDER BY r.start_date ASC, COALESCE(r.start_time, '00:00:00') ASC
-        ";
+        $query = $this->query()
+            ->from('reservasi as r')
+            ->select([
+                'r.id',
+                'r.user_id',
+                'r.start_date',
+                'r.end_date',
+                'r.est_person',
+                'r.building_id',
+                'r.event_id',
+                'r.start_time',
+                'r.end_time',
+                'g.building_name',
+                'k.district',
+                'w.region',
+                'a.event_name',
+                'u.name AS order_name',
+            ])
+            ->selectRaw($statusSelectSql)
+            ->selectRaw($notesSelectSql)
+            ->selectRaw($sessionDisplayNameSql . ' AS session_name')
+            ->join('gedung as g', 'g.id', '=', 'r.building_id')
+            ->join('kecamatan as k', 'k.id', '=', 'g.district_id')
+            ->join('wilayah as w', 'w.region', '=', 'k.region')
+            ->leftJoin('acara as a', 'a.id', '=', 'r.event_id')
+            ->leftJoin('user as u', 'u.id', '=', 'r.user_id')
+            ->whereIn(DB::raw($statusFilterSql), $queryStatuses)
+            ->orderBy('r.start_date')
+            ->orderByRaw("COALESCE(r.start_time, '00:00:00')");
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if ($this->usesStatusRelation()) {
+            $query->leftJoin('status_reservasi as sr', 'sr.id', '=', 'r.status_id');
+        }
+
+        $rows = $this->rows($query->get());
 
         $events = [];
 

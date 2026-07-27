@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Contracts\Support\Responsable;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
@@ -12,10 +13,10 @@ abstract class Controller extends BaseController
 {
     protected function model(string $model): object
     {
-        $modelClass = 'App\\Models\\' . ltrim($model, '\\');
+        $modelClass = 'App\\Repositories\\' . ltrim($model, '\\') . 'Repository';
 
         if (!class_exists($modelClass)) {
-            throw new InvalidArgumentException("Model [{$model}] tidak ditemukan.");
+            throw new InvalidArgumentException("Repository [{$model}] tidak ditemukan.");
         }
 
         return app($modelClass);
@@ -51,21 +52,20 @@ abstract class Controller extends BaseController
         return $result ?? response($output);
     }
 
-    protected function view(string $view, array $data = []): void
+    protected function view(string $view, array $data = []): never
     {
-        if (!headers_sent()) {
-            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-            header('Pragma: no-cache');
-            header('Expires: 0');
-            header('Vary: X-PJAX, X-Requested-With, X-UMKM-Section');
-        }
+        $response = response()
+            ->view($view, $data)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0')
+            ->header('Vary', 'X-PJAX, X-Requested-With, X-UMKM-Section');
 
-        echo view($view, $data)->render();
+        throw new HttpResponseException($response);
     }
 
-    protected function redirect(string $path): void
+    protected function redirect(string $path): never
     {
-        header('Location: ' . base_url($path));
-        exit;
+        throw new HttpResponseException(redirect(url($path)));
     }
 }

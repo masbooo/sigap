@@ -1,15 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\URL;
-
-if (!defined('BASE_PATH')) {
-    define('BASE_PATH', dirname(__DIR__, 2));
-}
-
-if (!defined('BASE_URL')) {
-    define('BASE_URL', '/sigap');
-}
-
 if (!defined('SIGAP_SESSION_IDLE_TIMEOUT')) {
     define('SIGAP_SESSION_IDLE_TIMEOUT', 60 * 15);
 }
@@ -28,30 +18,6 @@ foreach ([
 ] as $supportFile) {
     if (is_file($supportFile)) {
         require_once $supportFile;
-    }
-}
-
-if (!function_exists('base_url')) {
-    function base_url(string $path = ''): string
-    {
-        $baseUrl = rtrim((string) config('app.base_url', BASE_URL), '/');
-        $path = ltrim($path, '/');
-
-        return $path === '' ? $baseUrl : $baseUrl . '/' . $path;
-    }
-}
-
-if (!function_exists('app_base_url')) {
-    function app_base_url(string $path = ''): string
-    {
-        return base_url($path);
-    }
-}
-
-if (!function_exists('asset_url')) {
-    function asset_url(string $path = ''): string
-    {
-        return base_url($path);
     }
 }
 
@@ -176,31 +142,10 @@ if (!function_exists('legacy_delete_upload_file')) {
     }
 }
 
-if (!function_exists('legacy_session_start')) {
-    function legacy_session_start(): void
-    {
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            return;
-        }
-
-        session_name('SIGAPSESSID');
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => rtrim(BASE_URL, '/') ?: '/',
-            'secure' => request()->isSecure(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        session_start();
-    }
-}
-
 if (!function_exists('verify_csrf')) {
     function verify_csrf(): void
     {
-        legacy_session_start();
-
-        $token = (string) ($_POST['_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+        $token = (string) (request()->input('_token') ?? request()->header('X-CSRF-TOKEN', ''));
         if ($token === '' || !hash_equals((string) csrf_token(), $token)) {
             abort(419, 'Sesi Anda telah habis. Silakan muat ulang halaman.');
         }
@@ -213,10 +158,8 @@ if (!function_exists('verify_csrf_or_redirect')) {
         try {
             verify_csrf();
         } catch (Throwable $exception) {
-            legacy_session_start();
-            $_SESSION['error'] = $message;
-            header('Location: ' . base_url($path));
-            exit;
+            session(['error' => $message]);
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect($path));
         }
     }
 }
@@ -224,9 +167,10 @@ if (!function_exists('verify_csrf_or_redirect')) {
 if (!function_exists('set_authenticated_user_session')) {
     function set_authenticated_user_session(array $user): void
     {
-        legacy_session_start();
-        $_SESSION['user'] = $user;
-        $_SESSION['user_id'] = (int) ($user['id'] ?? 0);
+        session([
+            'user' => $user,
+            'user_id' => (int) ($user['id'] ?? 0),
+        ]);
         touch_user_session_activity();
     }
 }
@@ -234,9 +178,10 @@ if (!function_exists('set_authenticated_user_session')) {
 if (!function_exists('set_authenticated_admin_session')) {
     function set_authenticated_admin_session(array $admin): void
     {
-        legacy_session_start();
-        $_SESSION['admin'] = $admin;
-        $_SESSION['admin_id'] = (int) ($admin['id'] ?? 0);
+        session([
+            'admin' => $admin,
+            'admin_id' => (int) ($admin['id'] ?? 0),
+        ]);
         touch_admin_session_activity();
     }
 }
@@ -244,18 +189,18 @@ if (!function_exists('set_authenticated_admin_session')) {
 if (!function_exists('user_user')) {
     function user_user(): ?array
     {
-        legacy_session_start();
+        $user = session('user');
 
-        return isset($_SESSION['user']) && is_array($_SESSION['user']) ? $_SESSION['user'] : null;
+        return is_array($user) ? $user : null;
     }
 }
 
 if (!function_exists('admin_user')) {
     function admin_user(): ?array
     {
-        legacy_session_start();
+        $admin = session('admin');
 
-        return isset($_SESSION['admin']) && is_array($_SESSION['admin']) ? $_SESSION['admin'] : null;
+        return is_array($admin) ? $admin : null;
     }
 }
 
@@ -276,32 +221,28 @@ if (!function_exists('is_admin_logged_in')) {
 if (!function_exists('destroy_user_auth_session')) {
     function destroy_user_auth_session(): void
     {
-        legacy_session_start();
-        unset($_SESSION['user'], $_SESSION['user_id'], $_SESSION['user_last_activity']);
+        session()->forget(['user', 'user_id', 'user_last_activity']);
     }
 }
 
 if (!function_exists('destroy_admin_auth_session')) {
     function destroy_admin_auth_session(): void
     {
-        legacy_session_start();
-        unset($_SESSION['admin'], $_SESSION['admin_id'], $_SESSION['admin_last_activity']);
+        session()->forget(['admin', 'admin_id', 'admin_last_activity']);
     }
 }
 
 if (!function_exists('touch_user_session_activity')) {
     function touch_user_session_activity(): void
     {
-        legacy_session_start();
-        $_SESSION['user_last_activity'] = time();
+        session(['user_last_activity' => time()]);
     }
 }
 
 if (!function_exists('touch_admin_session_activity')) {
     function touch_admin_session_activity(): void
     {
-        legacy_session_start();
-        $_SESSION['admin_last_activity'] = time();
+        session(['admin_last_activity' => time()]);
     }
 }
 
@@ -337,8 +278,7 @@ if (!function_exists('require_admin')) {
     function require_admin(): void
     {
         if (!is_admin_logged_in()) {
-            header('Location: ' . base_url('admin/login'));
-            exit;
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect('admin/login'));
         }
 
         touch_admin_session_activity();

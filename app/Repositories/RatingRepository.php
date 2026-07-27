@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace App\Repositories;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use PDO;
 
-class Rating
+class RatingRepository extends LegacyRepository
 {
-    protected PDO $db;
+    protected $table = 'rating_ulasan';
+
     protected array $columnExistsCache = [];
 
     private static bool $bootstrapped = false;
@@ -16,9 +15,9 @@ class Rating
     private const ALLOWED_TARGETS = ['GEDUNG', 'UMKM'];
     private const ALLOWED_STATUSES = ['PEMBAYARAN LUNAS', 'ACARA SELESAI'];
 
-    public function __construct()
+    public function __construct(array $attributes = [])
     {
-        $this->db = DB::connection()->getPdo();
+        parent::__construct($attributes);
         $this->bootstrap();
     }
 
@@ -47,7 +46,7 @@ class Rating
             ];
         }
 
-        $reservasiModel = new Reservasi();
+        $reservasiModel = new ReservasiRepository();
         $reservations = array_values(array_filter(
             $reservasiModel->byUserDetailed($userId),
             function (array $reservation): bool {
@@ -150,41 +149,23 @@ class Rating
             return $this->failResult('Target rating tidak sesuai dengan data reservasi.');
         }
 
-        $upsertStmt = $this->db->prepare("
-            INSERT INTO rating_ulasan (
-                user_id,
-                reservation_id,
-                target_type,
-                target_id,
-                rating,
-                review,
-                created_at,
-                updated_at
-            ) VALUES (
-                :user_id,
-                :reservation_id,
-                :target_type,
-                :target_id,
-                :rating,
-                :review,
-                NOW(),
-                NOW()
-            )
-            ON DUPLICATE KEY UPDATE
-                target_id = VALUES(target_id),
-                rating = VALUES(rating),
-                review = VALUES(review),
-                updated_at = NOW()
-        ");
+        $lookup = [
+            'user_id' => $userId,
+            'reservation_id' => $reservationId,
+            'target_type' => $targetType,
+        ];
+        $payload = [
+            'target_id' => $expectedTargetId,
+            'rating' => $rating,
+            'review' => $review !== '' ? $review : null,
+            'updated_at' => now(),
+        ];
 
-        $upsertStmt->execute([
-            ':user_id' => $userId,
-            ':reservation_id' => $reservationId,
-            ':target_type' => $targetType,
-            ':target_id' => $expectedTargetId,
-            ':rating' => $rating,
-            ':review' => $review !== '' ? $review : null,
-        ]);
+        if (!$this->query()->where($lookup)->exists()) {
+            $payload['created_at'] = now();
+        }
+
+        $this->query()->updateOrInsert($lookup, $payload);
 
         $this->refreshAggregateRating($targetType, $expectedTargetId);
 
@@ -241,36 +222,17 @@ class Rating
             return [];
         }
 
-        $placeholders = [];
-        $params = [
-            ':user_id' => $userId,
-        ];
-
-        foreach ($reservationIds as $index => $reservationId) {
-            $placeholder = ':reservation_id_' . $index;
-            $placeholders[] = $placeholder;
-            $params[$placeholder] = $reservationId;
-        }
-
-        $stmt = $this->db->prepare("
-            SELECT
-                reservation_id,
-                target_type,
-                target_id,
-                rating,
-                review,
-                created_at,
-                updated_at
-            FROM rating_ulasan
-            WHERE user_id = :user_id
-              AND reservation_id IN (" . implode(', ', $placeholders) . ")
-        ");
-
-        $stmt->execute($params);
+        $rows = $this->rows(
+            $this->query()
+                ->select('reservation_id', 'target_type', 'target_id', 'rating', 'review', 'created_at', 'updated_at')
+                ->where('user_id', $userId)
+                ->whereIn('reservation_id', $reservationIds)
+                ->get()
+        );
 
         $map = [];
 
-        foreach ($stmt->fetchAll() ?: [] as $row) {
+        foreach ($rows as $row) {
             $reservationId = (int) ($row['reservation_id'] ?? 0);
             $targetType = strtoupper(trim((string) ($row['target_type'] ?? '')));
 
@@ -338,7 +300,7 @@ class Rating
                 'title' => $reservationTitle,
                 'subtitle' => $this->buildNotificationSubtitle($reservation, $pendingTargets),
                 'message' => $this->buildPendingLabel($pendingTargets),
-                'href' => base_url('user/rating' . ($pendingTargets !== [] ? '#' . ($pendingTargets[0]['anchor'] ?? '') : '')),
+                'href' => url('user/rating' . ($pendingTargets !== [] ? '#' . ($pendingTargets[0]['anchor'] ?? '') : '')),
                 'pending_count' => count($pendingTargets),
                 'end_date' => (string) ($reservation['end_date'] ?? ''),
             ],
@@ -367,7 +329,7 @@ class Rating
         $reviewValue = trim((string) ($existingRating['review'] ?? ''));
         $isCompleted = $ratingValue >= 1;
         $anchor = 'rating-' . $reservationId . '-' . strtolower($targetType);
-        $defaultThumb = asset_url('assets/custom/images/backgrounds/profilebg.jpg');
+        $defaultThumb = asset('assets/custom/images/backgrounds/profilebg.jpg');
 
         if ($targetType === 'GEDUNG') {
             $nameLabel = trim((string) ($reservation['building_name'] ?? 'Gedung'));
@@ -517,7 +479,7 @@ class Rating
 
     private function findEligibleReservationById(int $userId, int $reservationId): ?array
     {
-        $reservasiModel = new Reservasi();
+        $reservasiModel = new ReservasiRepository();
         $reservations = $reservasiModel->byUserDetailed($userId);
 
         foreach ($reservations as $reservation) {
@@ -535,22 +497,11 @@ class Rating
 
     private function refreshAggregateRating(string $targetType, int $targetId): void
     {
-        $stmt = $this->db->prepare("
-            SELECT
-                AVG(rating) AS average_rating,
-                COUNT(*) AS total_reviews
-            FROM rating_ulasan
-            WHERE target_type = :target_type
-              AND target_id = :target_id
-        ");
-        $stmt->execute([
-            ':target_type' => $targetType,
-            ':target_id' => $targetId,
-        ]);
-
-        $row = $stmt->fetch() ?: [];
-        $averageRating = round((float) ($row['average_rating'] ?? 0), 1);
-        $reviewCount = (int) ($row['total_reviews'] ?? 0);
+        $ratingsQuery = $this->query()
+            ->where('target_type', $targetType)
+            ->where('target_id', $targetId);
+        $averageRating = round((float) $ratingsQuery->avg('rating'), 1);
+        $reviewCount = (int) $ratingsQuery->count();
 
         if ($targetType === 'GEDUNG') {
             $payload = [];
@@ -586,27 +537,9 @@ class Rating
             return;
         }
 
-        $assignments = [];
-        $params = [
-            ':id' => $targetId,
-        ];
-
-        foreach ($payload as $column => $value) {
-            $assignments[] = $column . ' = :' . $column;
-            $params[':' . $column] = $value;
-        }
-
-        if ($assignments === []) {
-            return;
-        }
-
-        $stmt = $this->db->prepare("
-            UPDATE {$table}
-            SET " . implode(', ', $assignments) . "
-            WHERE id = :id
-        ");
-
-        $stmt->execute($params);
+        $this->table($table)
+            ->where('id', $targetId)
+            ->update($payload);
     }
 
     private function isEligibleReservation(array $reservation): bool

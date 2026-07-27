@@ -44,9 +44,8 @@ class ProfilController extends Controller
             }
         }
 
-        $success = $_SESSION['success'] ?? '';
-        $error = $_SESSION['error'] ?? '';
-        unset($_SESSION['success'], $_SESSION['error']);
+        $success = session()->pull('success', '');
+        $error = session()->pull('error', '');
 
         $this->view('user.profil.index', [
             'title' => 'Profil Saya - SIGAP',
@@ -68,52 +67,42 @@ class ProfilController extends Controller
             return;
         }
 
-        verify_csrf_or_redirect('/user/profil', 'Sesi Anda telah habis. Silakan ulangi upload foto profil.');
+        verify_csrf();
         require_once base_path('app/Supports/Upload/UploadFile.php');
 
-        $userModel = $this->model('User');
-        $file = $_FILES['profile_photo'] ?? null;
-        $validationError = $this->validateProfilePhotoUpload($file);
+        $photoFile = $_FILES['profile_photo'] ?? null;
+        $validationError = $this->validateProfilePhotoUpload($photoFile);
 
         if ($validationError !== null) {
-            $_SESSION['error'] = $validationError;
+            session(['error' => $validationError]);
             $this->redirect('/user/profil');
             return;
         }
 
-        $uploadedFilename = upload_file(
-            $file,
-            self::PROFILE_PHOTO_UPLOAD_DIRECTORY,
-            ['jpg', 'jpeg', 'png']
-        );
-
+        $uploadedFilename = upload_file($photoFile, 'user/profil');
         if ($uploadedFilename === null) {
-            $_SESSION['error'] = 'Foto profil gagal diunggah. Silakan coba lagi.';
+            session(['error' => 'Foto profil gagal diunggah. Silakan coba lagi.']);
             $this->redirect('/user/profil');
             return;
         }
 
-        $newRelativePath = self::PROFILE_PHOTO_UPLOAD_DIRECTORY . '/' . $uploadedFilename;
-        $currentPhotoPath = $this->normalizeRelativeUploadPath((string) ($user['pic_path'] ?? ''));
+        $relativePhotoPath = 'user/profil/' . $uploadedFilename;
+        $userModel = $this->model('User');
+        $saved = $userModel->updateProfilePhoto((int) $user['id'], $relativePhotoPath);
 
-        $updated = $userModel->updateProfilePhotoPath((int) ($user['id'] ?? 0), $newRelativePath);
-        if (!$updated) {
-            $this->deleteUploadFile($newRelativePath);
-            $_SESSION['error'] = 'Foto profil gagal disimpan ke akun. Silakan coba lagi.';
+        if (!$saved) {
+            $this->deleteUploadedFile($relativePhotoPath);
+            session(['error' => 'Foto profil gagal disimpan ke akun. Silakan coba lagi.']);
             $this->redirect('/user/profil');
             return;
         }
 
-        if ($currentPhotoPath !== '' && $currentPhotoPath !== $newRelativePath) {
-            $this->deleteUploadFile($currentPhotoPath);
+        $oldPhotoPath = (string) ($user['pic_path'] ?? '');
+        if ($oldPhotoPath !== '' && $oldPhotoPath !== $relativePhotoPath) {
+            $this->deleteUploadedFile($oldPhotoPath);
         }
 
-        $freshUser = $userModel->findById((int) ($user['id'] ?? 0));
-        if (is_array($freshUser) && !empty($freshUser)) {
-            set_authenticated_user_session($freshUser);
-        }
-
-        $_SESSION['success'] = 'Foto profil berhasil diperbarui.';
+        session(['success' => 'Foto profil berhasil diperbarui.']);
         $this->redirect('/user/profil');
     }
 
@@ -124,32 +113,27 @@ class ProfilController extends Controller
             return;
         }
 
-        verify_csrf_or_redirect('/user/profil', 'Sesi Anda telah habis. Silakan ulangi reset foto profil.');
+        verify_csrf();
+
+        $currentPhotoPath = (string) ($user['pic_path'] ?? '');
+        if ($currentPhotoPath === '') {
+            session(['success' => 'Foto profil sudah menggunakan gambar default.']);
+            $this->redirect('/user/profil');
+            return;
+        }
 
         $userModel = $this->model('User');
-        $currentPhotoPath = $this->normalizeRelativeUploadPath((string) ($user['pic_path'] ?? ''));
+        $resetSuccess = $userModel->updateProfilePhoto((int) $user['id'], null);
 
-        if ($currentPhotoPath === '') {
-            $_SESSION['success'] = 'Foto profil sudah menggunakan gambar default.';
+        if (!$resetSuccess) {
+            session(['error' => 'Foto profil gagal direset. Silakan coba lagi.']);
             $this->redirect('/user/profil');
             return;
         }
 
-        $updated = $userModel->updateProfilePhotoPath((int) ($user['id'] ?? 0), null);
-        if (!$updated) {
-            $_SESSION['error'] = 'Foto profil gagal direset. Silakan coba lagi.';
-            $this->redirect('/user/profil');
-            return;
-        }
+        $this->deleteUploadedFile($currentPhotoPath);
 
-        $this->deleteUploadFile($currentPhotoPath);
-
-        $freshUser = $userModel->findById((int) ($user['id'] ?? 0));
-        if (is_array($freshUser) && !empty($freshUser)) {
-            set_authenticated_user_session($freshUser);
-        }
-
-        $_SESSION['success'] = 'Foto profil berhasil direset ke gambar default.';
+        session(['success' => 'Foto profil berhasil direset ke gambar default.']);
         $this->redirect('/user/profil');
     }
 
@@ -160,78 +144,68 @@ class ProfilController extends Controller
             return;
         }
 
-        verify_csrf_or_redirect('/user/profil', 'Sesi Anda telah habis. Silakan ulangi perubahan password.');
+        verify_csrf();
 
-        $currentPassword = trim((string) ($_POST['current_password'] ?? ''));
-        $newPassword = trim((string) ($_POST['password'] ?? ''));
-        $passwordConfirmation = trim((string) ($_POST['password_confirmation'] ?? ''));
+        $currentPassword = trim((string) request('current_password', ''));
+        $newPassword = trim((string) request('password', ''));
+        $passwordConfirmation = trim((string) request('password_confirmation', ''));
 
         if ($currentPassword === '' || $newPassword === '' || $passwordConfirmation === '') {
-            $_SESSION['error'] = 'Semua field password wajib diisi';
+            session(['error' => 'Semua field password wajib diisi']);
             $this->redirect('/user/profil');
             return;
         }
 
-        if (!password_verify($currentPassword, (string) ($user['password'] ?? ''))) {
-            $_SESSION['error'] = 'Password sekarang tidak sesuai';
+        $userModel = $this->model('User');
+        if (!$userModel->verifyPassword($user, $currentPassword)) {
+            session(['error' => 'Password sekarang tidak sesuai']);
             $this->redirect('/user/profil');
             return;
         }
 
-        if (!preg_match('/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/', $newPassword)) {
-            $_SESSION['error'] = 'Password baru minimal 8 karakter dan harus terdiri dari huruf dan angka';
+        if (!validate_password_strength($newPassword)) {
+            session(['error' => 'Password baru minimal 8 karakter dan harus terdiri dari huruf dan angka']);
             $this->redirect('/user/profil');
             return;
         }
 
         if ($newPassword !== $passwordConfirmation) {
-            $_SESSION['error'] = 'Ulangi Password tidak sesuai';
+            session(['error' => 'Ulangi Password tidak sesuai']);
             $this->redirect('/user/profil');
             return;
         }
 
-        if (password_verify($newPassword, (string) ($user['password'] ?? ''))) {
-            $_SESSION['error'] = 'Password baru harus berbeda dari password sekarang';
+        if ($newPassword === $currentPassword) {
+            session(['error' => 'Password baru harus berbeda dari password sekarang']);
             $this->redirect('/user/profil');
             return;
         }
 
-        $userModel = $this->model('User');
-        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-        $updated = $userModel->updatePassword((int) ($user['id'] ?? 0), $hashedPassword);
+        $updated = $userModel->updatePassword((int) $user['id'], $newPassword);
 
         if (!$updated) {
-            $_SESSION['error'] = 'Gagal mengubah password. Silakan coba lagi';
+            session(['error' => 'Gagal mengubah password. Silakan coba lagi']);
             $this->redirect('/user/profil');
             return;
         }
 
-        $freshUser = $userModel->findById((int) ($user['id'] ?? 0));
-        if (is_array($freshUser) && !empty($freshUser)) {
-            set_authenticated_user_session($freshUser);
-        }
-
-        $_SESSION['success'] = 'Password berhasil diubah';
+        session(['success' => 'Password berhasil diubah']);
         $this->redirect('/user/profil');
     }
 
     private function requireAuthenticatedUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return null;
         }
 
         $userModel = $this->model('User');
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) $sessionUser['id']);
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return null;
         }

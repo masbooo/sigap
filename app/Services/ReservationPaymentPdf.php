@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Exceptions\HttpResponseException;
+
 class ReservationPaymentPdf
 {
     private const PAGE_WIDTH = 612.00;
@@ -22,15 +24,7 @@ class ReservationPaymentPdf
         $this->documentTitle = preg_replace('/\.pdf$/i', '', $safeFilename) ?: 'va-pembayaran';
         $pdf = $this->render($data);
 
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: ' . $this->buildContentDispositionValue('inline', $safeFilename));
-        header('X-File-Name: ' . $safeFilename);
-        header('Content-Length: ' . strlen($pdf));
-        header('Cache-Control: private, max-age=0, must-revalidate');
-        header('Pragma: public');
-
-        echo $pdf;
-        exit;
+        $this->throwPdfResponse($pdf, 'inline', $safeFilename);
     }
 
     public function outputDownload(array $data, string $filename = 'va-pembayaran.pdf'): void
@@ -39,15 +33,20 @@ class ReservationPaymentPdf
         $this->documentTitle = preg_replace('/\.pdf$/i', '', $safeFilename) ?: 'va-pembayaran';
         $pdf = $this->render($data);
 
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: ' . $this->buildContentDispositionValue('attachment', $safeFilename));
-        header('X-File-Name: ' . $safeFilename);
-        header('Content-Length: ' . strlen($pdf));
-        header('Cache-Control: private, max-age=0, must-revalidate');
-        header('Pragma: public');
+        $this->throwPdfResponse($pdf, 'attachment', $safeFilename);
+    }
 
-        echo $pdf;
-        exit;
+    private function throwPdfResponse(string $pdf, string $disposition, string $filename): never
+    {
+        throw new HttpResponseException(
+            response($pdf)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', $this->buildContentDispositionValue($disposition, $filename))
+                ->header('X-File-Name', $filename)
+                ->header('Content-Length', (string) strlen($pdf))
+                ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+                ->header('Pragma', 'public')
+        );
     }
 
     public function render(array $data): string

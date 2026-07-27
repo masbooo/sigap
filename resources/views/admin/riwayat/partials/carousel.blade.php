@@ -45,13 +45,13 @@
                     $rawIcon = trim((string) ($card['icon'] ?? ''));
                     $isAbsoluteIconUrl = preg_match('~^(?:https?:)?//|^data:|^/~i', $rawIcon) === 1;
                     $isImagePath = preg_match('~\.(svg|png|jpe?g|gif|webp)(\?.*)?$~i', $rawIcon) === 1;
-                    $iconSrc = base_url('assets/custom/images/svgs/icon-connect.svg');
+                    $iconSrc = asset('assets/custom/images/svgs/icon-connect.svg');
 
                     if ($rawIcon !== '') {
                         if ($isAbsoluteIconUrl) {
                             $iconSrc = $rawIcon;
                         } elseif ($isImagePath) {
-                            $iconSrc = base_url(ltrim(preg_replace('~^\./~', '', $rawIcon), '/'));
+                            $iconSrc = url(ltrim(preg_replace('~^\./~', '', $rawIcon), '/'));
                         }
                     }
 

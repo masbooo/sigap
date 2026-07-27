@@ -1,4 +1,4 @@
-<?php
+@php
 $navbarAdmin = $admin ?? admin_user() ?? [];
 $roleContext = resolve_admin_role_context($navbarAdmin);
 $profileName = trim((string) ($navbarAdmin['name'] ?? '')) !== ''
@@ -10,8 +10,8 @@ $districtName = trim((string) ($roleContext['district_name'] ?? ''));
 if ($districtName !== '' && ($roleContext['scope_type'] ?? 'all') === 'district') {
     $profileSubtitle .= ' - ' . $districtName;
 }
-$defaultProfilePhoto = asset_url('assets/custom/images/profile/user-1.jpg');
-?>
+$defaultProfilePhoto = asset('assets/custom/images/profile/user-1.jpg');
+@endphp
     <header class="topbar">
         <div class="with-vertical">
             <nav class="navbar navbar-expand-lg p-0 px-3 px-lg-4">
@@ -24,7 +24,7 @@ $defaultProfilePhoto = asset_url('assets/custom/images/profile/user-1.jpg');
                 </ul>
 
                 <div class="d-block d-lg-none py-4 logo-img">
-                    <img src="{{ asset_url('assets/custom/images/logos/sigap32.svg') }}" class="img-fluid" alt="SIGAP">
+                    <img src="{{ asset('assets/custom/images/logos/sigap32.svg') }}" class="img-fluid" alt="SIGAP">
                 </div>
 
                 <a class="navbar-toggler nav-icon-hover-bg rounded-circle p-0 mx-0 border-0"
@@ -90,7 +90,7 @@ $defaultProfilePhoto = asset_url('assets/custom/images/profile/user-1.jpg');
                                     </div>
 
                                     <div class="d-grid px-7 admin-profile-logout-wrap">
-                                        <a href="{{ base_url('admin/logout') }}" class="btn btn-outline-primary">KELUAR</a>
+                                        <a href="{{ url('admin/logout') }}" class="btn btn-outline-primary">KELUAR</a>
                                     </div>
                                 </div>
                             </div>

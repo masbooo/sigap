@@ -3,77 +3,7 @@
 use App\Http\Controllers\CaptchaController;
 use App\Http\Controllers\Landing;
 use App\Http\Controllers\User;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-
-Route::get('assets/{path}', static function (string $path) {
-    $path = trim(str_replace('\\', '/', $path), '/');
-
-    if ($path === '' || str_contains($path, '..') || preg_match('~(?:^|/)\.~', $path)) {
-        abort(404);
-    }
-
-    $mimeTypes = [
-        'css' => 'text/css; charset=UTF-8',
-        'js' => 'application/javascript; charset=UTF-8',
-        'mjs' => 'application/javascript; charset=UTF-8',
-        'json' => 'application/json; charset=UTF-8',
-        'map' => 'application/json; charset=UTF-8',
-        'svg' => 'image/svg+xml',
-        'png' => 'image/png',
-        'jpg' => 'image/jpeg',
-        'jpeg' => 'image/jpeg',
-        'gif' => 'image/gif',
-        'webp' => 'image/webp',
-        'ico' => 'image/x-icon',
-        'pdf' => 'application/pdf',
-        'woff' => 'font/woff',
-        'woff2' => 'font/woff2',
-        'ttf' => 'font/ttf',
-        'eot' => 'application/vnd.ms-fontobject',
-    ];
-
-    foreach (legacy_asset_candidates($path) as $candidate) {
-        $realPath = realpath($candidate);
-
-        if ($realPath !== false && is_file($realPath)) {
-            $extension = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
-
-            if (!array_key_exists($extension, $mimeTypes)) {
-                abort(404);
-            }
-
-            $isUpload = str_starts_with($path, 'upload/') || str_starts_with($path, 'uploads/');
-            $response = response()->file($realPath, [
-                'Content-Type' => $mimeTypes[$extension],
-            ]);
-
-            $response->headers->set('Cache-Control', $isUpload
-                ? 'private, max-age=0, must-revalidate'
-                : 'public, max-age=86400'
-            );
-            $response->headers->set('X-Content-Type-Options', 'nosniff');
-
-            return $response;
-        }
-    }
-
-    abort(404);
-})
-    ->where('path', '.*')
-    ->withoutMiddleware([
-        EncryptCookies::class,
-        AddQueuedCookiesToResponse::class,
-        StartSession::class,
-        ShareErrorsFromSession::class,
-        ValidateCsrfToken::class,
-        SubstituteBindings::class,
-    ]);
 
 Route::get('/', [Landing\HomeController::class, 'index'])->name('home');
 Route::get('gedung', [Landing\GedungController::class, 'index'])->name('gedung.index');

@@ -120,23 +120,23 @@
     <div class="card bg-primary-subtle rounded-2">
         <div class="card-body text-center">
             <div class="d-flex align-items-center justify-content-center mb-4 pt-8">
-                <img src="{{ asset_url('assets/custom/images/profile/user-3.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 1">
-                <img src="{{ asset_url('assets/custom/images/profile/user-2.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 2">
-                <img src="{{ asset_url('assets/custom/images/profile/user-4.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 3">
+                <img src="{{ asset('assets/custom/images/profile/user-3.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 1">
+                <img src="{{ asset('assets/custom/images/profile/user-2.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 2">
+                <img src="{{ asset('assets/custom/images/profile/user-4.jpg') }}" class="rounded-circle me-n2 card-hover border border-2 border-white" width="44" height="44" alt="User 3">
             </div>
             <h3 class="fw-semibold">Butuh bantuan lanjutan?</h3>
             <p class="fw-normal mb-4 fs-4">Mulai dengan menghubungi Kecamatan sesuai lokasi gedung serbaguna pilihan Anda</p>
             <div class="d-flex align-items-center justify-content-center gap-3 flex-wrap mb-2">
-                <a href="{{ base_url('kontak') }}" class="btn btn-outline-primary">Buka Kontak</a>
+                <a href="{{ url('kontak') }}" class="btn btn-outline-primary">Buka Kontak</a>
             </div>
         </div>
     </div>
 </section>
 
 <script>
-    window.contactMapDefault = <?php echo json_encode($mapDefault ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    window.contactAllData = <?php echo json_encode($allContacts ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    window.contactGroupByRegion = <?php echo json_encode($contactGroup ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    window.contactMapDefault = {!! json_encode($mapDefault ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
+    window.contactAllData = {!! json_encode($allContacts ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
+    window.contactGroupByRegion = {!! json_encode($contactGroup ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
 </script>
 
 @endsection

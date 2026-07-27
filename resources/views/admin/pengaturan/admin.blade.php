@@ -74,7 +74,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -107,7 +107,7 @@
             </div>
 
             <form
-                action="{{ base_url('admin/pengaturan/admin') }}"
+                action="{{ url('admin/pengaturan/admin') }}"
                 method="POST"
                 data-admin-account-form
                 data-scoped-roles="{{ implode(',', $districtScopedRoleIds) }}"
@@ -249,7 +249,7 @@
                                                         </button>
                                                     @else
                                                         <form
-                                                            action="{{ base_url('admin/pengaturan/admin/hapus') }}"
+                                                            action="{{ url('admin/pengaturan/admin/hapus') }}"
                                                             method="POST"
                                                             class="admin-table-action-form admin-user-action-form"
                                                             onsubmit="return confirm('Hapus akun {{ $displayName($account) }}?')"
@@ -292,7 +292,7 @@
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
                     <form
-                        action="{{ base_url('admin/pengaturan/admin/update') }}"
+                        action="{{ url('admin/pengaturan/admin/update') }}"
                         method="POST"
                         data-admin-account-form
                         data-scoped-roles="{{ implode(',', $districtScopedRoleIds) }}"

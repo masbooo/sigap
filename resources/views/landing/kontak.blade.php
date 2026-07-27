@@ -69,9 +69,9 @@
 </section>
 
 <script>
-    window.contactMapDefault = <?php echo json_encode($mapDefault ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    window.contactAllData = <?php echo json_encode($allContacts ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    window.contactGroupByRegion = <?php echo json_encode($contactGroup ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    window.contactMapDefault = {!! json_encode($mapDefault ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
+    window.contactAllData = {!! json_encode($allContacts ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
+    window.contactGroupByRegion = {!! json_encode($contactGroup ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
 </script>
 
 @endsection

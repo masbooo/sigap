@@ -17,8 +17,8 @@
 
     async function waitCriticalAssets() {
         const logoSources = [
-            "{{ asset_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}",
-            "{{ asset_url('assets/custom/images/logos/logotxt_sigap_w.svg') }}"
+            "{{ asset('assets/custom/images/logos/logotxt_sigap_b.svg') }}",
+            "{{ asset('assets/custom/images/logos/logotxt_sigap_w.svg') }}"
         ];
 
         const waits = [

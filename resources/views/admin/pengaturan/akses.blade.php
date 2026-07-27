@@ -54,7 +54,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ base_url('admin/pengaturan/akses') }}" method="POST">
+                    <form action="{{ url('admin/pengaturan/akses') }}" method="POST">
                         {!! csrf_field() !!}
 
                         <div class="d-flex flex-column gap-4">

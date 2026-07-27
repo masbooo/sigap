@@ -4,12 +4,12 @@
 
 <div class="auth-max-width col-sm-8 col-md-6 col-xl-7 px-4">
     <div class="position-relative text-center">
-        <img src="{{ asset_url('assets/custom/images/logos/pemkot.svg') }}" class="mb-3 w-25" alt="Logo Pemkot" />
+        <img src="{{ asset('assets/custom/images/logos/pemkot.svg') }}" class="mb-3 w-25" alt="Logo Pemkot" />
         <h2 class="mb-3 fs-7 fw-bolder text-center">LUPA SANDI SIGAP</h2>
     </div>
 
     @if (($step ?? 1) === 1)
-    <form action="{{ base_url('lupa-sandi/verifikasi') }}" method="POST" autocomplete="off" id="forgotPasswordVerifyForm" novalidate>
+    <form action="{{ url('lupa-sandi/verifikasi') }}" method="POST" autocomplete="off" id="forgotPasswordVerifyForm" novalidate>
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
         <div class="mb-3">
@@ -47,7 +47,7 @@
             <div class="col-6">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <img
-                        src="{{ base_url('captcha') }}"
+                        src="{{ url('captcha') }}"
                         id="captcha-img"
                         alt="Captcha"
                         class="auth-captcha-image"
@@ -77,7 +77,7 @@
     @else
     <p class="text-muted text-center mb-3">Verifikasi berhasil. Silakan buat password baru Anda</p>
 
-    <form action="{{ base_url('lupa-sandi/reset') }}" method="POST" autocomplete="off" id="forgotPasswordResetForm" novalidate>
+    <form action="{{ url('lupa-sandi/reset') }}" method="POST" autocomplete="off" id="forgotPasswordResetForm" novalidate>
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
         <div class="mb-3 password-field">
@@ -134,7 +134,7 @@
         </div>
         <div class="row">
              <div class="col-6">
-                <a href="{{ base_url('lupa-sandi/batal') }}" class="btn btn-danger w-100 py-8 mb-3 rounded-2">BATAL</a>
+                <a href="{{ url('lupa-sandi/batal') }}" class="btn btn-danger w-100 py-8 mb-3 rounded-2">BATAL</a>
             </div>
             <div class="col-6">
                 <button type="submit" class="btn btn-success w-100 py-8 mb-3 rounded-2">SIMPAN</button>
@@ -145,7 +145,7 @@
 
     <div class="text-center">
         <span>Sudah punya akun SIGAP?</span>
-        <a href="{{ base_url('lupa-sandi/batal') }}" class="text-primary fw-semibold ms-1">Masuk di sini!</a>
+        <a href="{{ url('lupa-sandi/batal') }}" class="text-primary fw-semibold ms-1">Masuk di sini!</a>
     </div>
 </div>
 

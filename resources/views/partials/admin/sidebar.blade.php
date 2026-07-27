@@ -7,9 +7,9 @@
 <aside class="left-sidebar with-vertical">
     <div>
         <div class="brand-logo d-flex align-items-center justify-content-between">
-            <a href="{{ base_url('admin/dasbor') }}" class="text-nowrap logo-img">
-                <img src="{{ base_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo" style="width:160px;" alt="Logo SIGAP" />
-                <img src="{{ base_url('assets/custom/images/logos/logotxt_sigap_w.svg') }}" class="light-logo" alt="Logo SIGAP" />
+            <a href="{{ url('admin/dasbor') }}" class="text-nowrap logo-img">
+                <img src="{{ asset('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo" style="width:160px;" alt="Logo SIGAP" />
+                <img src="{{ asset('assets/custom/images/logos/logotxt_sigap_w.svg') }}" class="light-logo" alt="Logo SIGAP" />
             </a>
         </div>
 

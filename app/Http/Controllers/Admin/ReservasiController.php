@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reservasi;
-
 class ReservasiController extends Controller
 {
     public function index()
@@ -58,9 +56,8 @@ class ReservasiController extends Controller
             ],
         ];
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('admin.reservasi.index', [
             'title' => 'Reservasi - SIGAP',
@@ -93,9 +90,8 @@ class ReservasiController extends Controller
 
         $summaryCards = $this->buildHistorySummaryCards($reservations);
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('admin.riwayat.gedung', [
             'title' => 'Riwayat Gedung - SIGAP',
@@ -132,9 +128,8 @@ class ReservasiController extends Controller
 
         $summaryCards = $this->buildHistorySummaryCards($reservations);
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('admin.riwayat.umkm', [
             'title' => 'Riwayat UMKM - SIGAP',
@@ -159,10 +154,10 @@ class ReservasiController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request('reservation_id', 0);
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/reservasi');
             return;
         }
@@ -171,25 +166,25 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         $status = reservation_status_display_key($reservation['status'] ?? '');
         if ($status !== 'RESERVASI BARU') {
-            $_SESSION['error'] = 'Hanya reservasi berstatus Reservasi Baru yang dapat dilanjutkan ke tahap Kerjasama UMKM';
+            session(['error' => 'Hanya reservasi berstatus Reservasi Baru yang dapat dilanjutkan ke tahap Kerjasama UMKM']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         if (!$reservasiModel->updateStatus($reservationId, 'KERJASAMA UMKM')) {
-            $_SESSION['error'] = 'Reservasi gagal dilanjutkan ke tahap Kerjasama UMKM. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal dilanjutkan ke tahap Kerjasama UMKM. Silakan coba lagi']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
-        $_SESSION['success'] = 'Reservasi berhasil dilanjutkan dan statusnya menjadi Kerjasama UMKM';
+        session(['success' => 'Reservasi berhasil dilanjutkan dan statusnya menjadi Kerjasama UMKM']);
         $this->redirect('/admin/reservasi');
     }
 
@@ -201,17 +196,17 @@ class ReservasiController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
-        $returnNote = trim((string) ($_POST['rejection_note'] ?? ''));
+        $reservationId = (int) request('reservation_id', 0);
+        $returnNote = trim((string) request('rejection_note', ''));
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         if ($returnNote === '') {
-            $_SESSION['error'] = 'Catatan pengembalian wajib diisi sebelum reservasi dapat dikembalikan';
+            session(['error' => 'Catatan pengembalian wajib diisi sebelum reservasi dapat dikembalikan']);
             $this->redirect('/admin/reservasi');
             return;
         }
@@ -220,25 +215,25 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         $status = reservation_status_display_key($reservation['status'] ?? '');
         if ($status !== 'RESERVASI BARU') {
-            $_SESSION['error'] = 'Hanya reservasi berstatus Reservasi Baru yang dapat dikembalikan ke pemohon';
+            session(['error' => 'Hanya reservasi berstatus Reservasi Baru yang dapat dikembalikan ke pemohon']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         if (!$reservasiModel->updateStatusWithMetadata($reservationId, 'BERKAS RESERVASI TIDAK SESUAI', $returnNote, 1, 1)) {
-            $_SESSION['error'] = 'Reservasi gagal dikembalikan ke pemohon. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal dikembalikan ke pemohon. Silakan coba lagi']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
-        $_SESSION['success'] = 'Reservasi berhasil dikembalikan ke pemohon dan statusnya menjadi Berkas Reservasi Tidak Sesuai';
+        session(['success' => 'Reservasi berhasil dikembalikan ke pemohon dan statusnya menjadi Berkas Reservasi Tidak Sesuai']);
         $this->redirect('/admin/reservasi');
     }
 
@@ -250,17 +245,17 @@ class ReservasiController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
-        $rejectionNote = trim((string) ($_POST['rejection_note'] ?? ''));
+        $reservationId = (int) request('reservation_id', 0);
+        $rejectionNote = trim((string) request('rejection_note', ''));
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         if ($rejectionNote === '') {
-            $_SESSION['error'] = 'Catatan penolakan wajib diisi sebelum permohonan dapat ditolak';
+            session(['error' => 'Catatan penolakan wajib diisi sebelum permohonan dapat ditolak']);
             $this->redirect('/admin/reservasi');
             return;
         }
@@ -269,25 +264,25 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         $status = reservation_status_display_key($reservation['status'] ?? '');
         if ($status !== 'RESERVASI BARU') {
-            $_SESSION['error'] = 'Hanya reservasi berstatus Reservasi Baru yang dapat ditolak';
+            session(['error' => 'Hanya reservasi berstatus Reservasi Baru yang dapat ditolak']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
         if (!$reservasiModel->updateStatusWithMetadata($reservationId, 'PERMOHONAN DITOLAK', $rejectionNote, 0, 0)) {
-            $_SESSION['error'] = 'Reservasi gagal ditolak. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal ditolak. Silakan coba lagi']);
             $this->redirect('/admin/reservasi');
             return;
         }
 
-        $_SESSION['success'] = 'Reservasi berhasil ditolak dan statusnya menjadi Permohonan Ditolak';
+        session(['success' => 'Reservasi berhasil ditolak dan statusnya menjadi Permohonan Ditolak']);
         $this->redirect('/admin/reservasi');
     }
 
@@ -416,16 +411,16 @@ class ReservasiController extends Controller
             $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? ''));
 
             $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($identityRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($identityRelativePath, '/'))
                 : '';
             $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($applicationRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($applicationRelativePath, '/'))
                 : '';
             $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($umkmRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($umkmRelativePath, '/'))
                 : '';
             $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($paymentRelativePath, '/'))
                 : '';
         }
         unset($reservation);
@@ -452,14 +447,14 @@ class ReservasiController extends Controller
         $admin = admin_user() ?? [];
 
         if (!$this->canDeleteReservation($admin)) {
-            $_SESSION['error'] = 'Hanya Super Admin dan Admin yang dapat menghapus reservasi';
+            session(['error' => 'Hanya Super Admin dan Admin yang dapat menghapus reservasi']);
             $this->redirect($redirectPath);
             return;
         }
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request('reservation_id', 0);
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect($redirectPath);
             return;
         }
@@ -468,21 +463,21 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan';
+            session(['error' => 'Data reservasi tidak ditemukan']);
             $this->redirect($redirectPath);
             return;
         }
 
         $deleted = $reservasiModel->deleteById($reservationId);
         if (!$deleted) {
-            $_SESSION['error'] = 'Reservasi gagal dihapus. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal dihapus. Silakan coba lagi']);
             $this->redirect($redirectPath);
             return;
         }
 
         $this->deleteUploadedIdentityFile((string) ($reservation['id_path'] ?? ''));
 
-        $_SESSION['success'] = 'Reservasi berhasil dihapus';
+        session(['success' => 'Reservasi berhasil dihapus']);
         $this->redirect($redirectPath);
     }
 

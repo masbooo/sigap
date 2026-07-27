@@ -6,14 +6,6 @@ class CaptchaController extends Controller
 {
     public function image()
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
         $length = 5;
         $code = '';
 
@@ -21,7 +13,7 @@ class CaptchaController extends Controller
             $code .= (string) random_int(0, 9);
         }
 
-        $_SESSION['captcha'] = $code;
+        session(['captcha' => $code]);
 
         $width = 190;
         $height = 64;
@@ -144,11 +136,9 @@ class CaptchaController extends Controller
 </svg>
 SVG;
 
-        header('Content-Type: image/svg+xml; charset=UTF-8');
-        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-        header('Pragma: no-cache');
-
-        echo $svg;
-        exit;
+        return response($svg)
+            ->header('Content-Type', 'image/svg+xml; charset=UTF-8')
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache');
     }
 }

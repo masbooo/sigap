@@ -6,7 +6,7 @@
     <div class="admin-auth-panel my-2 mb-2">
         <div class="position-relative text-center">
             <span class="badge admin-auth-badge mb-3">PORTAL ADMIN</span>
-            <img src="{{ asset_url('assets/custom/images/logos/pemkot.svg') }}" class="mb-4 admin-auth-logo" alt="Logo Pemkot" />
+            <img src="{{ asset('assets/custom/images/logos/pemkot.svg') }}" class="mb-4 admin-auth-logo" alt="Logo Pemkot" />
         </div>
 
         <div class="admin-auth-note">
@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <form action="{{ base_url('admin/login') }}" method="POST" autocomplete="off" id="loginForm" novalidate>
+    <form action="{{ url('admin/login') }}" method="POST" autocomplete="off" id="loginForm" novalidate>
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
         <div class="mb-3">
@@ -35,7 +35,7 @@
                 placeholder="Masukkan username admin"
                 autocomplete="username"
                 required
-                value="{{ htmlspecialchars($_SESSION['old_admin_username'] ?? '', ENT_QUOTES, 'UTF-8') }}"
+                value="{{ session('old_admin_username', '') }}"
             >
             <div class="invalid-feedback">Username belum diisi</div>
         </div>
@@ -73,7 +73,7 @@
             <div class="col-6">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <img
-                        src="{{ base_url('captcha') }}"
+                        src="{{ url('captcha') }}"
                         id="captcha-img"
                         alt="Captcha"
                         class="admin-auth-captcha-image"

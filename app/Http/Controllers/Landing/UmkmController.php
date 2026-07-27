@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Landing;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UmkmController extends Controller
 {
@@ -10,15 +11,15 @@ class UmkmController extends Controller
     {
         $requestedPage = $page !== null && trim($page) !== ''
             ? (int) $page
-            : (int) ($_GET['page'] ?? 1);
+            : (int) request()->query('page', 1);
 
-        if (!$this->isAjaxRequest() && isset($_GET['page'])) {
+        if (!$this->isAjaxRequest() && request()->query->has('page')) {
             $this->redirectToCanonicalPage($requestedPage);
             return;
         }
 
         $umkmModel = $this->model('Umkm');
-        $filters = $_GET;
+        $filters = request()->query();
 
         $filters['page'] = max(1, $requestedPage);
 
@@ -37,27 +38,26 @@ class UmkmController extends Controller
 
     private function isAjaxRequest(): bool
     {
-        $requestedWith = strtolower((string) ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
-        $umkmSection = strtolower((string) ($_SERVER['HTTP_X_UMKM_SECTION'] ?? ''));
-        $pjax = strtolower((string) ($_SERVER['HTTP_X_PJAX'] ?? ''));
+        $requestedWith = strtolower((string) request()->header('X-Requested-With', ''));
+        $umkmSection = strtolower((string) request()->header('X-UMKM-Section', ''));
+        $pjax = strtolower((string) request()->header('X-PJAX', ''));
 
         return $requestedWith === 'xmlhttprequest' || $umkmSection === 'true' || $pjax === 'true';
     }
 
     private function redirectToCanonicalPage(int $page): void
     {
-        $query = $_GET;
+        $query = request()->query();
         unset($query['page']);
 
         $target = $page > 1
-            ? base_url('umkm/' . $page)
-            : base_url('umkm');
+            ? url('umkm/' . $page)
+            : url('umkm');
 
         if (!empty($query)) {
             $target .= '?' . http_build_query($query);
         }
 
-        header('Location: ' . $target);
-        exit;
+        throw new HttpResponseException(redirect($target));
     }
 }

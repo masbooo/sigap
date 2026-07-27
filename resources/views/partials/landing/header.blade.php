@@ -9,11 +9,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Preload -->
-    <link rel="preload" as="image" href="{{ asset_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}">
-    <link rel="preload" as="image" href="{{ asset_url('assets/custom/images/logos/logotxt_sigap_w.svg') }}">
+    <link rel="preload" as="image" href="{{ asset('assets/custom/images/logos/logotxt_sigap_b.svg') }}">
+    <link rel="preload" as="image" href="{{ asset('assets/custom/images/logos/logotxt_sigap_w.svg') }}">
 
     <!-- Favicon icon -->
-    <link rel="shortcut icon" type="image/png" href="{{ asset_url('assets/custom/images/logos/sigap32.svg') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/custom/images/logos/sigap32.svg') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
 
     <style>
@@ -23,21 +23,21 @@
         }
     </style>
     <!-- Core Css -->
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/main/css/styles.css') }}">
 
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">
 
     <!-- Owl Carousel -->
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/libs/owl.carousel/owl.carousel.min.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/libs/aos/dist/aos.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/custom/libs/owl.carousel/owl.carousel.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/libs/aos/dist/aos.css') }}" />
 
     <!-- Rating -->
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/libs/jquery-raty-js/lib/jquery.raty.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/libs/jquery-raty-js/lib/jquery.raty.css') }}">
 
     <!-- Sweet Alert -->
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/libs/sweetalert2/sweetalert2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/libs/sweetalert2/sweetalert2.min.css') }}">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

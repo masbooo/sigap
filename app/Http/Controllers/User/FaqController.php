@@ -21,21 +21,17 @@ class FaqController extends Controller
 
     private function requireAuthenticatedUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return null;
         }
 
         $userModel = $this->model('User');
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) $sessionUser['id']);
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return null;
         }

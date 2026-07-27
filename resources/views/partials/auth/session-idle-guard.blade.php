@@ -1,12 +1,12 @@
 <script>
     (function () {
-        var scope = <?php echo json_encode($scope ?? 'user'); ?>;
-        var keepAliveUrl = <?php echo json_encode($keepAliveUrl ?? ''); ?>;
-        var logoutUrl = <?php echo json_encode($logoutUrl ?? ''); ?>;
-        var expiredLogoutUrl = <?php echo json_encode($expiredLogoutUrl ?? ($logoutUrl ?? '')); ?>;
-        var browserSessionKey = <?php echo json_encode($browserSessionKey ?? ''); ?>;
-        var sharedActivityKey = <?php echo json_encode($sharedActivityKey ?? ''); ?>;
-        var idleTimeoutMs = Math.max(300000, Number(<?php echo json_encode((int) ($idleTimeoutSeconds ?? 900) * 1000); ?>) || 900000);
+        var scope = {!! json_encode($scope ?? 'user') !!};
+        var keepAliveUrl = {!! json_encode($keepAliveUrl ?? '') !!};
+        var logoutUrl = {!! json_encode($logoutUrl ?? '') !!};
+        var expiredLogoutUrl = {!! json_encode($expiredLogoutUrl ?? ($logoutUrl ?? '')) !!};
+        var browserSessionKey = {!! json_encode($browserSessionKey ?? '') !!};
+        var sharedActivityKey = {!! json_encode($sharedActivityKey ?? '') !!};
+        var idleTimeoutMs = Math.max(300000, Number({!! json_encode((int) ($idleTimeoutSeconds ?? 900) * 1000) !!}) || 900000);
         var keepAliveThrottleMs = 60000;
         var passiveEvents = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove', 'click'];
         var lastLocalActivityAt = Date.now();

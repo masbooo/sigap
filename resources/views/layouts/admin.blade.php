@@ -1,15 +1,15 @@
 @include('partials.admin.header')
 
-<?php
+@php
 $adminBrowserSessionGuardMode = consume_auth_browser_session_guard_mode('admin');
 $adminBrowserSessionStorageKey = auth_browser_session_storage_key('admin');
-$adminBrowserSessionLogoutUrl = base_url('admin/logout');
-$adminSessionExpiredLogoutUrl = base_url('admin/logout?reason=expired');
-$adminKeepAliveUrl = base_url('admin/session/keepalive');
+$adminBrowserSessionLogoutUrl = url('admin/logout');
+$adminSessionExpiredLogoutUrl = url('admin/logout?reason=expired');
+$adminKeepAliveUrl = url('admin/session/keepalive');
 $adminSharedActivityStorageKey = 'sigap.admin.last-activity';
-?>
+@endphp
 
-<?php if ($adminBrowserSessionGuardMode !== 'none'): ?>
+@if ($adminBrowserSessionGuardMode !== 'none')
 <style>
     html.auth-session-guard-pending body {
         visibility: hidden;
@@ -18,9 +18,9 @@ $adminSharedActivityStorageKey = 'sigap.admin.last-activity';
 <script>
     (function () {
         var docEl = document.documentElement;
-        var guardMode = <?php echo json_encode($adminBrowserSessionGuardMode); ?>;
-        var storageKey = <?php echo json_encode($adminBrowserSessionStorageKey); ?>;
-        var logoutUrl = <?php echo json_encode($adminBrowserSessionLogoutUrl); ?>;
+        var guardMode = {!! json_encode($adminBrowserSessionGuardMode) !!};
+        var storageKey = {!! json_encode($adminBrowserSessionStorageKey) !!};
+        var logoutUrl = {!! json_encode($adminBrowserSessionLogoutUrl) !!};
 
         docEl.classList.add('auth-session-guard-pending');
 
@@ -45,7 +45,7 @@ $adminSharedActivityStorageKey = 'sigap.admin.last-activity';
         window.location.replace(logoutUrl);
     })();
 </script>
-<?php endif; ?>
+@endif
 
 @include('partials.auth.session-idle-guard', [
     'scope' => 'admin',

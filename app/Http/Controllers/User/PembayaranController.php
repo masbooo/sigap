@@ -29,9 +29,8 @@ class PembayaranController extends Controller
             }
         ));
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('user.pembayaran.index', [
             'title' => 'Pembayaran - SIGAP',
@@ -54,9 +53,9 @@ class PembayaranController extends Controller
         verify_csrf();
         require_once base_path('app/Supports/Upload/UploadFile.php');
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request('reservation_id', 0);
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Tagihan yang dipilih tidak valid';
+            session(['error' => 'Tagihan yang dipilih tidak valid']);
             $this->redirect('/user/pembayaran');
             return;
         }
@@ -66,29 +65,29 @@ class PembayaranController extends Controller
         $reservation = $reservasiModel->findByUserId($reservationId, (int) ($user['id'] ?? 0));
 
         if (!$reservation) {
-            $_SESSION['error'] = 'Data tagihan tidak ditemukan';
+            session(['error' => 'Data tagihan tidak ditemukan']);
             $this->redirect('/user/pembayaran');
             return;
         }
 
         if (!reservation_status_matches($reservation['status'] ?? '', ['MENUNGGU PEMBAYARAN', 'BERKAS PEMBAYARAN TIDAK SESUAI'])) {
-            $_SESSION['error'] = 'Hanya tagihan berstatus Menunggu Pembayaran atau Berkas Pembayaran Tidak Sesuai yang dapat diunggah';
+            session(['error' => 'Hanya tagihan berstatus Menunggu Pembayaran atau Berkas Pembayaran Tidak Sesuai yang dapat diunggah']);
             $this->redirect('/user/pembayaran');
             return;
         }
 
-        $paymentFile = $_FILES['payment_file'] ?? null;
-        $paymentUploadErrorCode = (int) ($paymentFile['error'] ?? UPLOAD_ERR_NO_FILE);
+        $paymentFile = request()->file('payment_file');
+        $paymentUploadErrorCode = (int) ($_FILES['payment_file']['error'] ?? UPLOAD_ERR_NO_FILE);
 
         if (!$paymentFile || $paymentUploadErrorCode !== UPLOAD_ERR_OK) {
-            $_SESSION['error'] = $this->getUploadErrorMessage($paymentUploadErrorCode, 'Bukti bayar');
+            session(['error' => $this->getUploadErrorMessage($paymentUploadErrorCode, 'Bukti bayar')]);
             $this->redirect('/user/pembayaran');
             return;
         }
 
-        $uploadedFilename = upload_file($paymentFile, 'reservasi/pembayaran');
+        $uploadedFilename = upload_file($_FILES['payment_file'], 'reservasi/pembayaran');
         if ($uploadedFilename === null) {
-            $_SESSION['error'] = 'Bukti bayar gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF';
+            session(['error' => 'Bukti bayar gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF']);
             $this->redirect('/user/pembayaran');
             return;
         }
@@ -105,7 +104,7 @@ class PembayaranController extends Controller
 
         if (!$saved) {
             $this->deleteUploadedFile($relativePaymentPath);
-            $_SESSION['error'] = 'Bukti bayar gagal disimpan. Silakan coba lagi';
+            session(['error' => 'Bukti bayar gagal disimpan. Silakan coba lagi']);
             $this->redirect('/user/pembayaran');
             return;
         }
@@ -113,12 +112,12 @@ class PembayaranController extends Controller
         if (!$reservasiModel->updateStatusWithMetadata($reservationId, 'CEK PEMBAYARAN', '', 1, 0)) {
             $pembayaranModel->deleteByReservationAndProofPath($reservationId, $relativePaymentPath);
             $this->deleteUploadedFile($relativePaymentPath);
-            $_SESSION['error'] = 'Status pembayaran gagal diperbarui. Silakan coba lagi';
+            session(['error' => 'Status pembayaran gagal diperbarui. Silakan coba lagi']);
             $this->redirect('/user/pembayaran');
             return;
         }
 
-        $_SESSION['success'] = 'Bukti bayar berhasil diunggah dan statusnya menjadi Cek Pembayaran';
+        session(['success' => 'Bukti bayar berhasil diunggah dan statusnya menjadi Cek Pembayaran']);
         $this->redirect('/user/pembayaran');
     }
 
@@ -128,35 +127,26 @@ class PembayaranController extends Controller
             $identityRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['id_path'] ?? ''));
             $applicationRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['form_path'] ?? ''));
             $umkmRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['umkm_path'] ?? ''));
-            $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? ''));
+            $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['proof_path'] ?? ''));
 
-            $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($identityRelativePath, '/'))
-                : '';
-            $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($applicationRelativePath, '/'))
-                : '';
-            $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($umkmRelativePath, '/'))
-                : '';
-            $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
-                : '';
+            $reservation['id_url'] = $identityRelativePath !== '' ? upload_url($identityRelativePath) : null;
+            $reservation['form_url'] = $applicationRelativePath !== '' ? upload_url($applicationRelativePath) : null;
+            $reservation['umkm_url'] = $umkmRelativePath !== '' ? upload_url($umkmRelativePath) : null;
+            $reservation['proof_url'] = $paymentRelativePath !== '' ? upload_url($paymentRelativePath) : null;
         }
         unset($reservation);
 
         return $reservations;
     }
 
-    private function normalizeRelativeUploadPath(?string $relativePath): string
+    private function normalizeRelativeUploadPath(string $path): string
     {
-        $normalizedPath = trim(str_replace('\\', '/', (string) $relativePath));
-
-        if (str_starts_with($normalizedPath, 'user/identity/')) {
-            $normalizedPath = 'user/identitas/' . substr($normalizedPath, strlen('user/identity/'));
+        $path = trim($path);
+        if ($path === '') {
+            return '';
         }
 
-        return $normalizedPath !== '' ? ltrim($normalizedPath, '/') : '';
+        return preg_replace('#^uploads/#', '', $path);
     }
 
     private function deleteUploadedFile(string $relativePath): void
@@ -166,10 +156,13 @@ class PembayaranController extends Controller
             return;
         }
 
-        legacy_delete_upload_file($relativePath);
+        $fullPath = uploads_path($relativePath);
+        if (file_exists($fullPath) && is_file($fullPath)) {
+            @unlink($fullPath);
+        }
     }
 
-    private function getUploadErrorMessage(int $errorCode, string $label = 'Bukti bayar'): string
+    private function getUploadErrorMessage(int $errorCode, string $label = 'File'): string
     {
         return match ($errorCode) {
             UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => 'Ukuran ' . strtolower($label) . ' terlalu besar',
@@ -181,21 +174,17 @@ class PembayaranController extends Controller
 
     private function requireAuthenticatedUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        $sessionUser = session('user');
+        if (!session('user_auth') || empty($sessionUser['id'])) {
             $this->redirect('/login');
             return null;
         }
 
         $userModel = $this->model('User');
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) $sessionUser['id']);
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            session()->forget(['user_auth', 'user']);
             $this->redirect('/login');
             return null;
         }

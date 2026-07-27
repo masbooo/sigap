@@ -218,14 +218,14 @@
 <script>
     window.sigapCalendarData = window.sigapCalendarData || {};
     window.sigapCalendarData.landing = {
-        filterData: <?php echo json_encode($filterData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
-        events: <?php echo json_encode($events ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,
-        eventsUrl: "{{ base_url('jadwal/events') }}",
+        filterData: {!! json_encode($filterData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
+        events: {!! json_encode($events ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!},
+        eventsUrl: "{{ url('jadwal/events') }}",
         refreshIntervalMs: 30000
     };
 
-    window.jadwalFilterData = <?php echo json_encode($filterData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    window.jadwalEvents = <?php echo json_encode($events ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    window.jadwalFilterData = {!! json_encode($filterData ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
+    window.jadwalEvents = {!! json_encode($events ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
 </script>
 
 @endsection

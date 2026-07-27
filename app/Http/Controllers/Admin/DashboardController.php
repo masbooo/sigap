@@ -147,9 +147,8 @@ class DashboardController extends Controller
         }
 
         csrf_token();
-        $success = $_SESSION['success'] ?? '';
-        $error = $_SESSION['error'] ?? '';
-        unset($_SESSION['success'], $_SESSION['error']);
+        $success = session()->pull('success', '');
+        $error = session()->pull('error', '');
 
         $this->view('admin.pengaturan.akses', [
             'title' => 'Hak Akses Admin - SIGAP',
@@ -175,7 +174,7 @@ class DashboardController extends Controller
 
         $admin = admin_user() ?? [];
         if ((int) ($admin['role_id'] ?? 0) !== 1) {
-            $_SESSION['error'] = 'Hanya Super Admin yang dapat mengubah hak akses menu';
+            session(['error' => 'Hanya Super Admin yang dapat mengubah hak akses menu']);
             $this->redirect('/admin/pengaturan/akses');
             return;
         }
@@ -194,7 +193,7 @@ class DashboardController extends Controller
                 continue;
             }
 
-            $selectedMenuIds = array_map('intval', (array) ($_POST['access'][$roleId] ?? []));
+            $selectedMenuIds = array_map('intval', (array) request("access.{$roleId}", []));
             $selectedMenuIds = array_values(array_unique(array_filter($selectedMenuIds, function (int $menuId) use ($validMenuLookup): bool {
                 return isset($validMenuLookup[$menuId]);
             })));
@@ -202,7 +201,7 @@ class DashboardController extends Controller
             $menuModel->saveRoleAccessMenuIds($roleId, $selectedMenuIds, $validMenuIds);
         }
 
-        $_SESSION['success'] = 'Hak akses menu berhasil diperbarui';
+        session(['success' => 'Hak akses menu berhasil diperbarui']);
         $this->redirect('/admin/pengaturan/akses');
     }
 

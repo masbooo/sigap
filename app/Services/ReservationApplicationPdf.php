@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Exceptions\HttpResponseException;
+
 class ReservationApplicationPdf
 {
     private const PAGE_WIDTH = 595.28;
@@ -17,14 +19,16 @@ class ReservationApplicationPdf
     {
         $pdf = $this->render($data);
 
-        header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="' . $this->sanitizeFilename($filename) . '"');
-        header('Content-Length: ' . strlen($pdf));
-        header('Cache-Control: private, max-age=0, must-revalidate');
-        header('Pragma: public');
+        $safeFilename = $this->sanitizeFilename($filename);
 
-        echo $pdf;
-        exit;
+        throw new HttpResponseException(
+            response($pdf)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $safeFilename . '"')
+                ->header('Content-Length', (string) strlen($pdf))
+                ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+                ->header('Pragma', 'public')
+        );
     }
 
     public function render(array $data): string

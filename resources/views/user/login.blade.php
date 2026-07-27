@@ -2,7 +2,7 @@
 
 @section('authTopAction')
     <a
-        href="{{ base_url('') }}"
+        href="{{ url('/') }}"
         class="btn bg-danger-subtle text-danger waves-effect border-0 shadow-sm px-3 px-md-4 py-2 d-inline-flex align-items-center gap-2"
     >
         <i class="ti ti-arrow-left fs-4"></i>
@@ -14,11 +14,11 @@
 
 <div class="auth-max-width col-sm-8 col-md-6 col-xl-7 px-4">
     <div class="position-relative text-center">
-        <img src="{{ asset_url('assets/custom/images/logos/pemkot.svg') }}" class="mb-3 w-25" alt="Logo Pemkot" />
+        <img src="{{ asset('assets/custom/images/logos/pemkot.svg') }}" class="mb-3 w-25" alt="Logo Pemkot" />
         <h2 class="mb-3 fs-7 fw-bolder text-center">LOGIN SIGAP</h2>
     </div>
 
-    <form action="{{ base_url('login') }}" method="POST" autocomplete="off" id="loginForm" novalidate>
+    <form action="{{ url('login') }}" method="POST" autocomplete="off" id="loginForm" novalidate>
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
         <div class="mb-3">
@@ -29,7 +29,7 @@
                 name="username"
                 class="form-control"
                 placeholder="Masukkan Username"
-                value="{{ htmlspecialchars($_SESSION['old_username'] ?? '', ENT_QUOTES, 'UTF-8') }}"
+                value="{{ session('old_username', '') }}"
             >
             <div class="invalid-feedback">Username belum diisi</div>
         </div>
@@ -65,7 +65,7 @@
             <div class="col-6">
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <img
-                        src="{{ base_url('captcha') }}"
+                        src="{{ url('captcha') }}"
                         id="captcha-img"
                         alt="Captcha"
                         class="auth-captcha-image"
@@ -97,7 +97,7 @@
                     Ingat Saya
                 </label> --}}
             </div>
-            <a class="text-danger fw-medium fs-3" href="{{ base_url('lupa-sandi') }}">Lupa Password ?</a>
+            <a class="text-danger fw-medium fs-3" href="{{ url('lupa-sandi') }}">Lupa Password ?</a>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 py-8 mb-3 rounded-2">MASUK</button>
@@ -106,7 +106,7 @@
 
     <div class="text-center">
         <span>Belum punya akun SIGAP?</span>
-        <a href="{{ base_url('daftar') }}" class="text-success fw-semibold ms-1">Buat akun di sini!</a>
+        <a href="{{ url('daftar') }}" class="text-success fw-semibold ms-1">Buat akun di sini!</a>
     </div>
 </div>
 

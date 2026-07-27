@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reservasi;
-
 class VerifikasiController extends Controller
 {
     public function index()
@@ -60,9 +58,8 @@ class VerifikasiController extends Controller
             ],
         ];
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('admin.verifikasi.index', [
             'title' => 'Proses Verifikasi - SIGAP',
@@ -85,7 +82,7 @@ class VerifikasiController extends Controller
 
     public function returnToApplicant()
     {
-        $this->updateVerificationStatus('BERKAS VERIFIKASI TIDAK SESUAI', 'Reservasi berhasil dikembalikan dan statusnya menjadi Berkas Verifikasi Tidak Sesuai');
+        $this->updateVerificationStatus('BERKAS VERIFIKASI TIDAK SESUAI', 'Reservasi berhasil dikembalikan ke pemohon dengan status Berkas Verifikasi Tidak Sesuai');
     }
 
     private function updateVerificationStatus(string $nextStatus, string $successMessage): void
@@ -96,10 +93,10 @@ class VerifikasiController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request('reservation_id', 0);
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/verifikasi');
             return;
         }
@@ -108,14 +105,14 @@ class VerifikasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/verifikasi');
             return;
         }
 
         $status = reservation_status_display_key($reservation['status'] ?? '');
         if ($status !== 'PROSES VERIFIKASI') {
-            $_SESSION['error'] = 'Reservasi ini sudah tidak berada pada antrean proses verifikasi';
+            session(['error' => 'Reservasi ini sudah tidak berada pada antrean proses verifikasi']);
             $this->redirect('/admin/verifikasi');
             return;
         }
@@ -123,10 +120,10 @@ class VerifikasiController extends Controller
         $updated = false;
 
         if ($nextStatus === 'BERKAS VERIFIKASI TIDAK SESUAI') {
-            $returnNote = trim((string) ($_POST['rejection_note'] ?? ''));
+            $returnNote = trim((string) request('rejection_note', ''));
 
             if ($returnNote === '') {
-                $_SESSION['error'] = 'Catatan pengembalian wajib diisi sebelum reservasi dapat dikembalikan';
+                session(['error' => 'Catatan pengembalian wajib diisi sebelum reservasi dapat dikembalikan']);
                 $this->redirect('/admin/verifikasi');
                 return;
             }
@@ -143,12 +140,12 @@ class VerifikasiController extends Controller
         }
 
         if (!$updated) {
-            $_SESSION['error'] = 'Status reservasi gagal diperbarui. Silakan coba lagi';
+            session(['error' => 'Status reservasi gagal diperbarui. Silakan coba lagi']);
             $this->redirect('/admin/verifikasi');
             return;
         }
 
-        $_SESSION['success'] = $successMessage;
+        session(['success' => $successMessage]);
         $this->redirect('/admin/verifikasi');
     }
     private function countByStatuses(array $reservations, array $statuses): int
@@ -194,16 +191,16 @@ class VerifikasiController extends Controller
             $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? ''));
 
             $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($identityRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($identityRelativePath, '/'))
                 : '';
             $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($applicationRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($applicationRelativePath, '/'))
                 : '';
             $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($umkmRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($umkmRelativePath, '/'))
                 : '';
             $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($paymentRelativePath, '/'))
                 : '';
         }
         unset($reservation);

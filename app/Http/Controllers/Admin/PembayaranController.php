@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reservasi;
-
 class PembayaranController extends Controller
 {
     public function index()
@@ -60,9 +58,8 @@ class PembayaranController extends Controller
             ],
         ];
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        unset($_SESSION['error'], $_SESSION['success']);
+        $error = session()->pull('error', '');
+        $success = session()->pull('success', '');
 
         $this->view('admin.pembayaran.index', [
             'title' => 'Pembayaran - SIGAP',
@@ -86,10 +83,10 @@ class PembayaranController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request('reservation_id', 0);
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/pembayaran');
             return;
         }
@@ -98,24 +95,24 @@ class PembayaranController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
         if (!reservation_status_matches($reservation['status'] ?? '', ['CEK PEMBAYARAN'])) {
-            $_SESSION['error'] = 'Hanya reservasi berstatus Cek Pembayaran yang dapat ditandai lunas';
+            session(['error' => 'Hanya reservasi berstatus Cek Pembayaran yang dapat ditandai lunas']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
         if (!$reservasiModel->updateStatus($reservationId, 'PEMBAYARAN LUNAS')) {
-            $_SESSION['error'] = 'Status pembayaran gagal diperbarui. Silakan coba lagi';
+            session(['error' => 'Status pembayaran gagal diperbarui. Silakan coba lagi']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
-        $_SESSION['success'] = 'Pembayaran berhasil dikonfirmasi dan statusnya menjadi Pembayaran Lunas';
+        session(['success' => 'Pembayaran berhasil dikonfirmasi dan statusnya menjadi Pembayaran Lunas']);
         $this->redirect('/admin/pembayaran');
     }
 
@@ -127,17 +124,17 @@ class PembayaranController extends Controller
         $admin = admin_user() ?? [];
         $roleContext = resolve_admin_role_context($admin);
         $districtId = (int) ($admin['district_id'] ?? 0);
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
-        $returnNote = trim((string) ($_POST['rejection_note'] ?? ''));
+        $reservationId = (int) request('reservation_id', 0);
+        $returnNote = trim((string) request('rejection_note', ''));
 
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Reservasi yang dipilih tidak valid';
+            session(['error' => 'Reservasi yang dipilih tidak valid']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
         if ($returnNote === '') {
-            $_SESSION['error'] = 'Catatan pengembalian wajib diisi sebelum pembayaran dapat dikembalikan';
+            session(['error' => 'Catatan pengembalian wajib diisi sebelum pembayaran dapat dikembalikan']);
             $this->redirect('/admin/pembayaran');
             return;
         }
@@ -146,24 +143,24 @@ class PembayaranController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || !$this->canAccessReservation($reservation, $roleContext, $districtId)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan pada cakupan akses Anda';
+            session(['error' => 'Data reservasi tidak ditemukan pada cakupan akses Anda']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
         if (!reservation_status_matches($reservation['status'] ?? '', ['CEK PEMBAYARAN'])) {
-            $_SESSION['error'] = 'Hanya reservasi berstatus Cek Pembayaran yang dapat dikembalikan';
+            session(['error' => 'Hanya reservasi berstatus Cek Pembayaran yang dapat dikembalikan']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
         if (!$reservasiModel->updateStatusWithMetadata($reservationId, 'BERKAS PEMBAYARAN TIDAK SESUAI', $returnNote, 1, 1)) {
-            $_SESSION['error'] = 'Status pembayaran gagal dikembalikan. Silakan coba lagi';
+            session(['error' => 'Status pembayaran gagal dikembalikan. Silakan coba lagi']);
             $this->redirect('/admin/pembayaran');
             return;
         }
 
-        $_SESSION['success'] = 'Pembayaran berhasil dikembalikan dan statusnya menjadi Berkas Pembayaran Tidak Sesuai';
+        session(['success' => 'Pembayaran berhasil dikembalikan dan statusnya menjadi Berkas Pembayaran Tidak Sesuai']);
         $this->redirect('/admin/pembayaran');
     }
 
@@ -210,16 +207,16 @@ class PembayaranController extends Controller
             $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? ''));
 
             $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($identityRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($identityRelativePath, '/'))
                 : '';
             $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($applicationRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($applicationRelativePath, '/'))
                 : '';
             $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($umkmRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($umkmRelativePath, '/'))
                 : '';
             $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($paymentRelativePath, '/'))
                 : '';
         }
         unset($reservation);

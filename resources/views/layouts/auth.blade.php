@@ -6,18 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link rel="shortcut icon" type="image/png" href="{{ asset_url('assets/custom/images/logos/sigap32.svg') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/custom/images/logos/sigap32.svg') }}">
 
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/custom/libs/sweetalert2/sweetalert2.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/main/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/custom/libs/sweetalert2/sweetalert2.min.css') }}">
 
     <title>{{ $title ?? 'Login SIGAP' }}</title>
 </head>
 
 <body>  
     @php
-        $authLogoUrl = $authLogoUrl ?? base_url('login');
+        $authLogoUrl = $authLogoUrl ?? url('login');
         $authSessionRedirectConfig = is_array($authSessionRedirectConfig ?? null)
             ? $authSessionRedirectConfig
             : ['active' => false];
@@ -38,11 +38,11 @@
                         @endif
 
                         <a href="{{ $authLogoUrl }}" class="text-nowrap logo-img d-block px-4 py-9 w-100">
-                            <img src="{{ asset_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo sigap-logo-text" alt="Logo-Dark" />
+                            <img src="{{ asset('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo sigap-logo-text" alt="Logo-Dark" />
                         </a>
 
                         <div class="d-none d-xl-flex align-items-center justify-content-center h-n80">
-                            <img src="{{ asset_url('assets/custom/images/backgrounds/login-security.svg') }}" alt="login-illustration" class="img-fluid" width="500">
+                            <img src="{{ asset('assets/custom/images/backgrounds/login-security.svg') }}" alt="login-illustration" class="img-fluid" width="500">
                         </div>
                     </div>
 
@@ -56,13 +56,13 @@
         </div>
     </div>
 
-    <script src="{{ asset_url('assets/custom/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ asset_url('assets/custom/libs/simplebar/dist/simplebar.min.js') }}"></script>
-    <script src="{{ asset_url('assets/custom/js/theme/app.init.js') }}"></script>
-    <script src="{{ asset_url('assets/custom/js/theme/theme.js') }}"></script>
-    <script src="{{ asset_url('assets/custom/js/theme/app.min.js') }}"></script>
-    <script src="{{ asset_url('assets/custom/libs/sweetalert2/sweetalert2.min.js') }}"></script>
-    <script src="{{ asset_url('assets/main/js/login.js') }}"></script>
-    <script src="{{ asset_url('assets/js/plugins/bootstrap-validation-init.js') }}"></script>
+    <script src="{{ asset('assets/custom/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/custom/libs/simplebar/dist/simplebar.min.js') }}"></script>
+    <script src="{{ asset('assets/custom/js/theme/app.init.js') }}"></script>
+    <script src="{{ asset('assets/custom/js/theme/theme.js') }}"></script>
+    <script src="{{ asset('assets/custom/js/theme/app.min.js') }}"></script>
+    <script src="{{ asset('assets/custom/libs/sweetalert2/sweetalert2.min.js') }}"></script>
+    <script src="{{ asset('assets/main/js/login.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/bootstrap-validation-init.js') }}"></script>
 </body>
 </html>

@@ -49,7 +49,7 @@
     $selectedStartTime = trim((string) ($oldInput['start_time'] ?? ''));
     $selectedEndTime = trim((string) ($oldInput['end_time'] ?? ''));
     $isCustomSessionSelected = $selectedSessionOption === 'lainnya';
-    $reservationFormAction = $isEditMode ? base_url('user/reservasi/update') : base_url('user/reservasi');
+    $reservationFormAction = $isEditMode ? url('user/reservasi/update') : url('user/reservasi');
     $reservationFormTitle = $isEditMode ? 'UBAH RESERVASI' : 'FORM RESERVASI';
     $reservationFormDescription = $isEditMode
         ? 'Data reservasi yang berstatus Reservasi Baru, Kerjasama UMKM, Berkas Reservasi Tidak Sesuai, atau Berkas Verifikasi Tidak Sesuai dapat diperbarui dan dikirim ulang'
@@ -206,7 +206,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -337,7 +337,7 @@
                                                         <button
                                                             type="button"
                                                             class="admin-table-action-item js-user-reservation-payment-print-button"
-                                                            data-print-url="{{ base_url('user/reservasi/pembayaran/cetak/' . $reservation['id']) }}"
+                                                            data-print-url="{{ url('user/reservasi/pembayaran/cetak/' . $reservation['id']) }}"
                                                             data-reservation-id="{{ $reservation['id'] }}"
                                                             data-reservation-code="{{ $reservationCode }}"
                                                         >
@@ -350,7 +350,7 @@
 
                                                     @if ($canEditReservation)
                                                         <a
-                                                            href="{{ base_url('user/reservasi/rubah/' . $reservation['id']) }}"
+                                                            href="{{ url('user/reservasi/rubah/' . $reservation['id']) }}"
                                                             class="admin-table-action-item"
                                                         >
                                                             <span class="admin-table-action-icon text-warning bg-warning-subtle">
@@ -362,7 +362,7 @@
 
                                                     @if ($canDeleteReservation)
                                                         <form
-                                                            action="{{ base_url('user/reservasi/hapus') }}"
+                                                            action="{{ url('user/reservasi/hapus') }}"
                                                             method="POST"
                                                             class="admin-table-action-form js-user-reservation-action-form"
                                                             data-confirm-title="<b>HAPUS RESERVASI</b>"
@@ -383,7 +383,7 @@
 
                                                     @if ($canCancelReservation)
                                                         <form
-                                                            action="{{ base_url('user/reservasi/batal') }}"
+                                                            action="{{ url('user/reservasi/batal') }}"
                                                             method="POST"
                                                             class="admin-table-action-form js-user-reservation-action-form"
                                                             data-confirm-title="<b>BATALKAN RESERVASI</b>"
@@ -713,7 +713,7 @@
                     <div class="reservation-payment-qris-modal__qr-frame">
                         <img
                             id="reservationPaymentQrisImage"
-                            src="{{ asset_url('assets/custom/images/payment/qris-sample-qr.png') }}"
+                            src="{{ asset('assets/custom/images/payment/qris-sample-qr.png') }}"
                             alt="QRIS Pembayaran"
                             class="img-fluid reservation-payment-qris-modal__qr-image"
                         >
@@ -736,7 +736,7 @@
 </div>
 
 <script type="application/json" id="user-reservation-config">
-<?php echo json_encode([
+{!! json_encode([
     'filterData' => $filterData ?? [],
     'events' => $events ?? [],
     'minBookingDate' => $minBookingDate ?? null,
@@ -746,7 +746,7 @@
     ],
     'historyReservations' => $myReservations ?? [],
     'reservation' => [
-        'panelUrl' => $reservationPanelUrl ?? base_url('user/reservasi/panel'),
+        'panelUrl' => $reservationPanelUrl ?? url('user/reservasi/panel'),
         'panelContainerId' => 'user-reservation-panel-container',
         'autoLoadPanel' => $shouldAutoLoadReservationPanel,
         'formId' => 'userReservationForm',
@@ -766,15 +766,15 @@
         'requestFileId' => 'reservation-request-file',
         'openButtonId' => 'user-reservation-open-button',
         'printButtonId' => 'reservation-print-button',
-        'printUrl' => $reservationPrintUrl ?? base_url('user/reservasi/permohonan/cetak'),
-        'paymentProcessUrl' => base_url('user/reservasi/pembayaran/proses'),
-        'paymentRevisionUrl' => base_url('user/reservasi/pembayaran/revisi'),
+        'printUrl' => $reservationPrintUrl ?? url('user/reservasi/permohonan/cetak'),
+        'paymentProcessUrl' => url('user/reservasi/pembayaran/proses'),
+        'paymentRevisionUrl' => url('user/reservasi/pembayaran/revisi'),
         'csrfToken' => csrf_token(),
         'detailRowId' => 'user-reservation-detail-row',
         'formColumnId' => 'user-reservation-form-column',
         'summaryColumnId' => 'user-reservation-summary-column',
     ],
-], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
 </script>
 
 @endsection

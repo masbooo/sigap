@@ -52,7 +52,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -84,7 +84,7 @@
                 <span class="badge bg-primary-subtle text-primary px-3 py-2">{{ count($userAccounts ?? []) }} user</span>
             </div>
 
-            <form action="{{ base_url('admin/pengaturan/user') }}" method="POST">
+            <form action="{{ url('admin/pengaturan/user') }}" method="POST">
                 {!! csrf_field() !!}
 
                 <div class="row g-3 align-items-end">
@@ -188,7 +188,7 @@
                                         </button>
 
                                         <form
-                                            action="{{ base_url('admin/pengaturan/user/hapus') }}"
+                                            action="{{ url('admin/pengaturan/user/hapus') }}"
                                             method="POST"
                                             class="admin-table-action-form admin-user-action-form"
                                             onsubmit="return confirm('Hapus akun {{ $displayName($account) }}?')"
@@ -225,7 +225,7 @@
         <div class="modal fade" id="{{ $modalId }}" tabindex="-1" aria-labelledby="{{ $modalId }}-label" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow">
-                    <form action="{{ base_url('admin/pengaturan/user/update') }}" method="POST">
+                    <form action="{{ url('admin/pengaturan/user/update') }}" method="POST">
                         {!! csrf_field() !!}
                         <input type="hidden" name="id" value="{{ $accountId }}">
 

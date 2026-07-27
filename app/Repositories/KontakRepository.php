@@ -1,52 +1,37 @@
 <?php
 
-namespace App\Models;
+namespace App\Repositories;
 
-use Illuminate\Support\Facades\DB;
-use PDO;
-
-class Kontak
+class KontakRepository extends LegacyRepository
 {
-    protected PDO $db;
-
-    public function __construct()
-    {
-        $this->db = DB::connection()->getPdo();
-    }
+    protected $table = 'kecamatan';
 
     public function getGroupedContacts(): array
     {
-        $sql = "
-            SELECT
-                k.id,
-                k.district,
-                k.region,
-                k.address,
-                k.phone,
-                k.lat,
-                k.lng,
-                COUNT(g.id) AS building_count
-            FROM kecamatan k
-            INNER JOIN gedung g
-                ON g.district_id = k.id
-               AND g.status = 'AKTIF'
-            WHERE k.lat IS NOT NULL
-              AND k.lng IS NOT NULL
-            GROUP BY
-                k.id,
-                k.district,
-                k.region,
-                k.address,
-                k.phone,
-                k.lat,
-                k.lng
-            ORDER BY
-                FIELD(k.region, 'Pusat', 'Timur', 'Selatan', 'Barat', 'Utara'),
-                k.district ASC
-        ";
-
-        $stmt = $this->db->query($sql);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->rows(
+            $this->query()
+                ->from('kecamatan as k')
+                ->select([
+                    'k.id',
+                    'k.district',
+                    'k.region',
+                    'k.address',
+                    'k.phone',
+                    'k.lat',
+                    'k.lng',
+                ])
+                ->selectRaw('COUNT(g.id) AS building_count')
+                ->join('gedung as g', function ($join): void {
+                    $join->on('g.district_id', '=', 'k.id')
+                        ->where('g.status', '=', 'AKTIF');
+                })
+                ->whereNotNull('k.lat')
+                ->whereNotNull('k.lng')
+                ->groupBy('k.id', 'k.district', 'k.region', 'k.address', 'k.phone', 'k.lat', 'k.lng')
+                ->orderByRaw("FIELD(k.region, 'Pusat', 'Timur', 'Selatan', 'Barat', 'Utara')")
+                ->orderBy('k.district')
+                ->get()
+        );
 
         $regionOrder = ['Pusat', 'Timur', 'Selatan', 'Barat', 'Utara'];
         $result = [];

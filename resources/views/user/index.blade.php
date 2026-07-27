@@ -15,7 +15,7 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
-                                <a class="text-muted text-decoration-none" href="{{ base_url('user/dasbor') }}">Dasbor</a>
+                                <a class="text-muted text-decoration-none" href="{{ url('user/dasbor') }}">Dasbor</a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">
                                 Infografis
@@ -25,7 +25,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -87,7 +87,7 @@
         $typeLabel = $extension !== '' ? strtoupper($extension) : 'FILE';
 
         return [
-            'url' => $normalizedPath !== '' ? base_url('assets/uploads/' . $normalizedPath) : '',
+            'url' => $normalizedPath !== '' ? asset('assets/uploads/' . $normalizedPath) : '',
             'name' => $fileName,
             'extension' => $extension,
             'type_label' => $typeLabel,
@@ -109,7 +109,7 @@
                     Silakan lengkapi profil Anda terlebih dahulu agar semua fitur dalam aplikasi SIGAP dapat segera Anda gunakan
                 </p>
 
-                <form action="{{ base_url('user/dasbor') }}" method="POST" enctype="multipart/form-data" id="requiredBiodataForm" novalidate>
+                <form action="{{ url('user/dasbor') }}" method="POST" enctype="multipart/form-data" id="requiredBiodataForm" novalidate>
                     {!! csrf_field() !!}
                     <input type="hidden" name="save_biodata" value="1">
 
@@ -200,14 +200,14 @@
                                 data-selected="{{ htmlspecialchars((string) ($user['district_id'] ?? ''), ENT_QUOTES, 'UTF-8') }}"
                             >
                                 <option value="">Pilih Kecamatan</option>
-                                <?php foreach (($districts ?? []) as $districtItem): ?>
+                                @foreach (($districts ?? []) as $districtItem)
                                     <option
-                                        value="<?= (int) $districtItem['id']; ?>"
-                                        <?= ((string) ($user['district_id'] ?? '') === (string) $districtItem['id']) ? 'selected' : ''; ?>
+                                        value="{{ (int) $districtItem['id'] }}"
+                                        @selected(((string) ($user['district_id'] ?? '')) === (string) $districtItem['id'])
                                     >
-                                        <?= htmlspecialchars($districtItem['district'], ENT_QUOTES, 'UTF-8'); ?>
+                                        {{ $districtItem['district'] }}
                                     </option>
-                                <?php endforeach; ?>
+                                @endforeach
                             </select>
                             <div class="invalid-feedback">Kecamatan wajib dipilih</div>
                         </div>
@@ -316,7 +316,7 @@
             </div>
 
             <div class="modal-footer">
-                <a href="{{ base_url('logout') }}" class="btn bg-danger-subtle text-danger waves-effect text-start">KELUAR</a>
+                <a href="{{ url('logout') }}" class="btn bg-danger-subtle text-danger waves-effect text-start">KELUAR</a>
                 <button type="submit" form="requiredBiodataForm" class="btn bg-success-subtle text-success waves-effect text-start">SIMPAN PROFIL</button>
             </div>
         </div>

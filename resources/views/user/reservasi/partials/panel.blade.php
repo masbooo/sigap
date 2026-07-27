@@ -67,7 +67,7 @@
         $typeLabel = $extension !== '' ? strtoupper($extension) : 'FILE';
 
         return [
-            'url' => base_url('assets/uploads/' . $normalizedPath),
+            'url' => asset('assets/uploads/' . $normalizedPath),
             'name' => $filename,
             'extension' => $extension,
             'type_label' => $typeLabel,
@@ -101,7 +101,7 @@
     $hasApplicantNik = $userNik !== '' && $userNik !== '-';
     $hasApplicantPhone = trim((string) ($user['phone'] ?? '')) !== '' && trim((string) ($user['phone'] ?? '-')) !== '-';
     $hasApplicantAddress = $userAddress !== '' && $userAddress !== '-';
-    $reservationFormAction = $isEditMode ? base_url('user/reservasi/update') : base_url('user/reservasi');
+    $reservationFormAction = $isEditMode ? url('user/reservasi/update') : url('user/reservasi');
     $reservationFormTitle = $isUmkmFollowUpMode
         ? 'FORM KERJASAMA UMKM'
         : ($isEditMode ? 'FORM RUBAH RESERVASI' : 'FORM RESERVASI BARU');
@@ -349,7 +349,7 @@
                             @if ($profileIncomplete)
                                 <span class="badge bg-danger-subtle text-danger">Profil belum lengkap</span>
                             @else
-                                <a href="{{ base_url('user/reservasi') }}" class="btn btn-danger reservation-form-back-button"><b>KEMBALI</b></a>
+                                <a href="{{ url('user/reservasi') }}" class="btn btn-danger reservation-form-back-button"><b>KEMBALI</b></a>
                             @endif
                         </div>
                     </div>

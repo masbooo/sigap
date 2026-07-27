@@ -1,5 +1,5 @@
 {{-- <div class="page-wrapper"> --}}
-<?php
+@php
 $navbarUser = $user ?? user();
 $profileName = resolve_user_display_name($navbarUser);
 $profilePhoto = resolve_user_profile_photo_url($navbarUser);
@@ -10,7 +10,7 @@ $profileSubtitle = trim((string) ($navbarUser['username'] ?? '')) !== ''
     ? '@' . $navbarUser['username']
     : 'User';
 $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
-?>
+@endphp
     <!-- Header Start -->
     <header class="topbar">
         <div class="with-vertical">
@@ -24,7 +24,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                 </ul>
 
                 <div class="d-block d-lg-none py-4 logo-img">
-                    <img src="{{ asset_url('assets/custom/images/logos/sigap32.svg') }}" class="img-fluid">
+                    <img src="{{ asset('assets/custom/images/logos/sigap32.svg') }}" class="img-fluid">
                 </div>
 
                 <a class="navbar-toggler nav-icon-hover-bg rounded-circle p-0 mx-0 border-0"
@@ -61,7 +61,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
 
                                 <div class="message-body" data-simplebar>
                                     @forelse ($ratingNotificationItems as $item)
-                                        <a href="{{ $item['href'] ?? base_url('user/rating') }}" class="py-6 px-7 d-flex align-items-center dropdown-item">
+                                        <a href="{{ $item['href'] ?? url('user/rating') }}" class="py-6 px-7 d-flex align-items-center dropdown-item">
                                             <span class="me-3 rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center shrink-0 user-notification-rating-icon">
                                                 <i class="ti ti-star fs-6"></i>
                                             </span>
@@ -118,9 +118,9 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                                     </div>
 
                                     <div class="message-body">
-                                        <a href="{{ base_url('user/profil') }}" class="py-8 px-7 mt-8 d-flex align-items-center ajax-link">
+                                        <a href="{{ url('user/profil') }}" class="py-8 px-7 mt-8 d-flex align-items-center ajax-link">
                                             <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6">
-                                                <img src="{{ asset_url('assets/custom/images/svgs/icon-account.svg') }}" width="24" height="24" />
+                                                <img src="{{ asset('assets/custom/images/svgs/icon-account.svg') }}" width="24" height="24" />
                                             </span>
                                             <div class="w-100 ps-3">
                                                 <h6 class="mb-1 fs-3 fw-semibold lh-base">Profilku</h6>
@@ -130,7 +130,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                                     </div>
 
                                     <div class="d-grid py-4 px-7 pt-8">
-                                        <a href="{{ base_url('logout') }}" class="btn btn-outline-primary">KELUAR</a>
+                                        <a href="{{ url('logout') }}" class="btn btn-outline-primary">KELUAR</a>
                                     </div>
                                 </div>
                             </div>

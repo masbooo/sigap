@@ -151,7 +151,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -250,7 +250,7 @@
 
                                                 @if ($canReviewPayment)
                                                     <form
-                                                        action="{{ base_url('admin/pembayaran/lunas') }}"
+                                                        action="{{ url('admin/pembayaran/lunas') }}"
                                                         method="POST"
                                                         class="admin-table-action-form js-admin-reservation-approve-form"
                                                         data-reservation-label="{{ trim((string) ($reservation['order_id'] ?? $reservation['request_id'] ?? '')) }}"
@@ -269,7 +269,7 @@
                                                     </form>
 
                                                     <form
-                                                        action="{{ base_url('admin/pembayaran/kembali') }}"
+                                                        action="{{ url('admin/pembayaran/kembali') }}"
                                                         method="POST"
                                                         class="admin-table-action-form js-admin-reservation-reject-form"
                                                         data-reservation-label="{{ trim((string) ($reservation['order_id'] ?? $reservation['request_id'] ?? '')) }}"
@@ -362,9 +362,9 @@
 </div>
 
 <script type="application/json" id="admin-gedung-reservation-config">
-<?php echo json_encode([
+{!! json_encode([
     'messages' => $messages,
     'reservations' => $normalizeReservations,
-], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
+], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}
 </script>
 @endsection

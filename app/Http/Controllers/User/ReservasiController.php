@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Umkm;
 use App\Services\ReservationApplicationPdf;
 use App\Services\ReservationPaymentPdf;
 use App\Supports\Payment\PaymentTestGateway;
 use DateTime;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Throwable;
 
 class ReservasiController extends Controller
@@ -56,7 +56,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        $documentData = $this->buildReservationApplicationDocumentData($user, $_POST);
+        $documentData = $this->buildReservationApplicationDocumentData($user, request()->input());
         if ($documentData === null) {
             return;
         }
@@ -74,11 +74,11 @@ class ReservasiController extends Controller
         }
 
         $reservationId = (int) trim((string) $id);
-        $method = $this->normalizePaymentDocumentMethod((string) ($_GET['method'] ?? ''));
-        $isDownloadMode = (string) ($_GET['download'] ?? '') === '1';
+        $method = $this->normalizePaymentDocumentMethod((string) request()->query('method', ''));
+        $isDownloadMode = (string) request()->query('download', '') === '1';
 
         if ($reservationId <= 0 || $method === '') {
-            $_SESSION['error'] = 'Dokumen pembayaran yang dipilih tidak valid';
+            session(['error' => 'Dokumen pembayaran yang dipilih tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -87,20 +87,20 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findDetailed($reservationId);
 
         if (!$reservation || (int) ($reservation['user_id'] ?? 0) !== (int) ($user['id'] ?? 0)) {
-            $_SESSION['error'] = 'Data reservasi tidak ditemukan';
+            session(['error' => 'Data reservasi tidak ditemukan']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if (!reservation_status_matches($reservation['status'] ?? '', ['MENUNGGU PEMBAYARAN'])) {
-            $_SESSION['error'] = 'Dokumen pembayaran hanya tersedia untuk reservasi berstatus Menunggu Pembayaran';
+            session(['error' => 'Dokumen pembayaran hanya tersedia untuk reservasi berstatus Menunggu Pembayaran']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $payment = $this->paymentGateway()->findActivePayment($reservationId, $method);
         if ($payment === null) {
-            $_SESSION['error'] = 'Metode pembayaran belum diproses atau sudah kedaluwarsa';
+            session(['error' => 'Metode pembayaran belum diproses atau sudah kedaluwarsa']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -132,29 +132,29 @@ class ReservasiController extends Controller
             if ($method === 'qris') {
                 $svg = $this->renderQrisPaymentDocumentSvg($document);
 
-                header('Content-Type: image/svg+xml; charset=UTF-8');
-                header('Content-Disposition: attachment; filename="' . $filename . '"');
-                header('Content-Length: ' . strlen($svg));
-                header('Cache-Control: private, max-age=0, must-revalidate');
-                header('Pragma: public');
-
-                echo $svg;
-                exit;
+                throw new HttpResponseException(
+                    response($svg)
+                        ->header('Content-Type', 'image/svg+xml; charset=UTF-8')
+                        ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                        ->header('Content-Length', (string) strlen($svg))
+                        ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+                        ->header('Pragma', 'public')
+                );
             }
 
             $html = $this->renderViewToString('user.reservasi.partials.invoice', $viewData);
+            $contentType = $method === 'va'
+                ? 'application/msword; charset=UTF-8'
+                : 'text/html; charset=UTF-8';
 
-            if ($method === 'va') {
-                header('Content-Type: application/msword; charset=UTF-8');
-            }
-
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
-            header('Content-Length: ' . strlen($html));
-            header('Cache-Control: private, max-age=0, must-revalidate');
-            header('Pragma: public');
-
-            echo $html;
-            exit;
+            throw new HttpResponseException(
+                response($html)
+                    ->header('Content-Type', $contentType)
+                    ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                    ->header('Content-Length', (string) strlen($html))
+                    ->header('Cache-Control', 'private, max-age=0, must-revalidate')
+                    ->header('Pragma', 'public')
+            );
         }
 
         $this->view('user.reservasi.partials.invoice', $viewData);
@@ -169,8 +169,8 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
-        $method = $this->normalizePaymentDocumentMethod((string) ($_POST['method'] ?? ''));
+        $reservationId = (int) request()->input('reservation_id', 0);
+        $method = $this->normalizePaymentDocumentMethod((string) request()->input('method', ''));
 
         if ($reservationId <= 0 || $method === '') {
             $this->respondReservationPaymentJson(false, 'Metode pembayaran yang dipilih tidak valid', [], 422);
@@ -205,7 +205,7 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request()->input('reservation_id', 0);
         if ($reservationId <= 0) {
             $this->respondReservationPaymentJson(false, 'Reservasi pembayaran tidak valid', [], 422);
         }
@@ -238,21 +238,21 @@ class ReservasiController extends Controller
         $umkmModel = $this->model('Umkm');
 
         if ($userModel->hasPendingProfileStatus($user)) {
-            $_SESSION['error'] = 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum mengajukan reservasi';
+            session(['error' => 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum mengajukan reservasi']);
             $this->redirect('/user/dasbor');
             return;
         }
 
-        $buildingId = (int) ($_POST['building_id'] ?? 0);
-        $eventId = (int) ($_POST['event_id'] ?? 0);
-        $umkmId = (int) ($_POST['umkm_id'] ?? 0);
-        $sessionOption = trim((string) ($_POST['session_option'] ?? ''));
-        $startDate = trim((string) ($_POST['start_date'] ?? ''));
-        $endDate = trim((string) ($_POST['end_date'] ?? $startDate));
-        $startTime = trim((string) ($_POST['start_time'] ?? ''));
-        $endTime = trim((string) ($_POST['end_time'] ?? ''));
-        $estPerson = (int) ($_POST['est_person'] ?? 0);
-        $_SESSION['old_reservasi'] = [
+        $buildingId = (int) request()->input('building_id', 0);
+        $eventId = (int) request()->input('event_id', 0);
+        $umkmId = (int) request()->input('umkm_id', 0);
+        $sessionOption = trim((string) request()->input('session_option', ''));
+        $startDate = trim((string) request()->input('start_date', ''));
+        $endDate = trim((string) request()->input('end_date', $startDate));
+        $startTime = trim((string) request()->input('start_time', ''));
+        $endTime = trim((string) request()->input('end_time', ''));
+        $estPerson = (int) request()->input('est_person', 0);
+        session(['old_reservasi' => [
             'building_id' => $buildingId,
             'event_id' => $eventId,
             'umkm_id' => $umkmId,
@@ -262,7 +262,7 @@ class ReservasiController extends Controller
             'start_time' => $startTime,
             'end_time' => $endTime,
             'est_person' => $estPerson,
-        ];
+        ]]);
 
         if (
             $buildingId <= 0 ||
@@ -272,63 +272,63 @@ class ReservasiController extends Controller
             $endDate === '' ||
             $estPerson <= 0
         ) {
-            $_SESSION['error'] = 'Semua field wajib terisi. Cek kembali';
+            session(['error' => 'Semua field wajib terisi. Cek kembali']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if (!$this->isValidDate($startDate) || !$this->isValidDate($endDate)) {
-            $_SESSION['error'] = 'Format tanggal reservasi tidak valid';
+            session(['error' => 'Format tanggal reservasi tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if ($startDate !== $endDate) {
-            $_SESSION['error'] = 'Saat ini reservasi user hanya mendukung pemesanan untuk satu tanggal';
+            session(['error' => 'Saat ini reservasi user hanya mendukung pemesanan untuk satu tanggal']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $minimumDate = (new DateTime('today'))->modify('+14 days')->format('Y-m-d');
         if ($startDate < $minimumDate) {
-            $_SESSION['error'] = 'Reservasi hanya dapat diajukan minimal H-14 dari tanggal pelaksanaan';
+            session(['error' => 'Reservasi hanya dapat diajukan minimal H-14 dari tanggal pelaksanaan']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $building = $reservasiModel->findActiveBuildingById($buildingId);
         if (!$building) {
-            $_SESSION['error'] = 'Gedung yang dipilih tidak valid atau tidak aktif';
+            session(['error' => 'Gedung yang dipilih tidak valid atau tidak aktif']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $requiresUmkmSelection = $this->buildingHasUmkmReservationOptions($umkmModel, $buildingId);
         if ($requiresUmkmSelection && $umkmId <= 0) {
-            $_SESSION['error'] = 'UMKM wajib dipilih sebelum reservasi dikirim';
+            session(['error' => 'UMKM wajib dipilih sebelum reservasi dikirim']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $event = $reservasiModel->findActiveEventById($eventId);
         if (!$event) {
-            $_SESSION['error'] = 'Jenis acara yang dipilih tidak valid';
+            session(['error' => 'Jenis acara yang dipilih tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $sessionSelection = $reservasiModel->resolveSessionSelection($sessionOption, $startTime, $endTime);
         if (!$sessionSelection) {
-            $_SESSION['error'] = $sessionOption === 'lainnya'
+            session(['error' => $sessionOption === 'lainnya'
                 ? 'Jam mulai dan jam selesai untuk opsi Lainnya wajib diisi dengan benar'
-                : 'Sesi reservasi yang dipilih tidak valid';
+                : 'Sesi reservasi yang dipilih tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $capacity = (int) ($building['capacity'] ?? 0);
         if ($capacity > 0 && $estPerson > $capacity) {
-            $_SESSION['error'] = 'Estimasi orang tidak boleh 0, maksimum ' . number_format($capacity, 0, ',', '.') . ' orang';
+            session(['error' => 'Estimasi orang tidak boleh 0, maksimum ' . number_format($capacity, 0, ',', '.') . ' orang']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -336,7 +336,7 @@ class ReservasiController extends Controller
         if ($umkmId > 0) {
             $umkmOption = $umkmModel->findReservationOptionById($umkmId);
             if (!$umkmOption || !in_array($buildingId, $umkmOption['building_ids'] ?? [], true)) {
-                $_SESSION['error'] = 'UMKM yang dipilih tidak tersedia untuk gedung tersebut';
+                session(['error' => 'UMKM yang dipilih tidak tersedia untuk gedung tersebut']);
                 $this->redirect('/user/reservasi');
                 return;
             }
@@ -349,21 +349,21 @@ class ReservasiController extends Controller
             (string) ($sessionSelection['start_time'] ?? ''),
             (string) ($sessionSelection['end_time'] ?? '')
         )) {
-            $_SESSION['error'] = 'Jadwal gedung pada tanggal dan sesi tersebut sudah terpakai';
+            session(['error' => 'Jadwal gedung pada tanggal dan sesi tersebut sudah terpakai']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $requestFile = $_FILES['request_file'] ?? null;
         if (!$requestFile || (int) ($requestFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            $_SESSION['error'] = $this->getUploadErrorMessage((int) ($requestFile['error'] ?? UPLOAD_ERR_NO_FILE), 'File permohonan');
+            session(['error' => $this->getUploadErrorMessage((int) ($requestFile['error'] ?? UPLOAD_ERR_NO_FILE), 'File permohonan')]);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $uploadedRequestFilename = upload_file($requestFile, 'reservasi/permohonan');
         if ($uploadedRequestFilename === null) {
-            $_SESSION['error'] = 'File permohonan gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF';
+            session(['error' => 'File permohonan gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -372,7 +372,7 @@ class ReservasiController extends Controller
         $relativeIdPath = $this->normalizeRelativeUploadPath((string) ($user['id_path'] ?? ''));
         if ($relativeIdPath === null) {
             $this->deleteUploadedFile($relativeFormPath);
-            $_SESSION['error'] = 'Identitas KTP pada profil belum tersedia. Lengkapi profil terlebih dahulu sebelum mengajukan reservasi.';
+            session(['error' => 'Identitas KTP pada profil belum tersedia. Lengkapi profil terlebih dahulu sebelum mengajukan reservasi.']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -400,14 +400,14 @@ class ReservasiController extends Controller
         if (!$created) {
             $this->deleteUploadedFile($relativeFormPath);
 
-            $_SESSION['error'] = 'Reservasi gagal disimpan. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal disimpan. Silakan coba lagi']);
             $this->redirect('/user/reservasi');
             return;
         }
 
-        unset($_SESSION['old_reservasi']);
+        session()->forget('old_reservasi');
 
-        $_SESSION['success'] = 'Reservasi berhasil diajukan dan statusnya menjadi Reservasi Baru';
+        session(['success' => 'Reservasi berhasil diajukan dan statusnya menjadi Reservasi Baru']);
         $this->redirect('/user/reservasi');
     }
 
@@ -427,43 +427,43 @@ class ReservasiController extends Controller
         $umkmModel = $this->model('Umkm');
 
         if ($userModel->hasPendingProfileStatus($user)) {
-            $_SESSION['error'] = 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum mengubah reservasi';
+            session(['error' => 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum mengubah reservasi']);
             $this->redirect('/user/dasbor');
             return;
         }
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request()->input('reservation_id', 0);
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Data reservasi yang ingin diubah tidak valid';
+            session(['error' => 'Data reservasi yang ingin diubah tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $reservation = $reservasiModel->findByUserId($reservationId, (int) $user['id']);
         if (!$reservation) {
-            $_SESSION['error'] = 'Data reservasi yang ingin diubah tidak ditemukan';
+            session(['error' => 'Data reservasi yang ingin diubah tidak ditemukan']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if (!$this->canUserEditReservation($reservation)) {
-            $_SESSION['error'] = 'Hanya reservasi dengan status Reservasi Baru, Kerjasama UMKM, Berkas Reservasi Tidak Sesuai, atau Berkas Verifikasi Tidak Sesuai yang dapat diubah';
+            session(['error' => 'Hanya reservasi dengan status Reservasi Baru, Kerjasama UMKM, Berkas Reservasi Tidak Sesuai, atau Berkas Verifikasi Tidak Sesuai yang dapat diubah']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $currentStatusKey = reservation_status_display_key($reservation['status'] ?? '');
 
-        $buildingId = (int) ($_POST['building_id'] ?? 0);
-        $eventId = (int) ($_POST['event_id'] ?? 0);
-        $umkmId = (int) ($_POST['umkm_id'] ?? 0);
-        $sessionOption = trim((string) ($_POST['session_option'] ?? ''));
-        $startDate = trim((string) ($_POST['start_date'] ?? ''));
-        $endDate = trim((string) ($_POST['end_date'] ?? $startDate));
-        $startTime = trim((string) ($_POST['start_time'] ?? ''));
-        $endTime = trim((string) ($_POST['end_time'] ?? ''));
-        $estPerson = (int) ($_POST['est_person'] ?? 0);
-        $_SESSION['old_reservasi'] = [
+        $buildingId = (int) request()->input('building_id', 0);
+        $eventId = (int) request()->input('event_id', 0);
+        $umkmId = (int) request()->input('umkm_id', 0);
+        $sessionOption = trim((string) request()->input('session_option', ''));
+        $startDate = trim((string) request()->input('start_date', ''));
+        $endDate = trim((string) request()->input('end_date', $startDate));
+        $startTime = trim((string) request()->input('start_time', ''));
+        $endTime = trim((string) request()->input('end_time', ''));
+        $estPerson = (int) request()->input('est_person', 0);
+        session(['old_reservasi' => [
             'reservation_id' => $reservationId,
             'building_id' => $buildingId,
             'event_id' => $eventId,
@@ -474,7 +474,7 @@ class ReservasiController extends Controller
             'start_time' => $startTime,
             'end_time' => $endTime,
             'est_person' => $estPerson,
-        ];
+        ]]);
 
         if (
             $buildingId <= 0 ||
@@ -484,63 +484,63 @@ class ReservasiController extends Controller
             $endDate === '' ||
             $estPerson <= 0
         ) {
-            $_SESSION['error'] = 'Semua field wajib terisi. Cek kembali';
+            session(['error' => 'Semua field wajib terisi. Cek kembali']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         if (!$this->isValidDate($startDate) || !$this->isValidDate($endDate)) {
-            $_SESSION['error'] = 'Format tanggal reservasi tidak valid';
+            session(['error' => 'Format tanggal reservasi tidak valid']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         if ($startDate !== $endDate) {
-            $_SESSION['error'] = 'Saat ini reservasi user hanya mendukung pemesanan untuk satu tanggal';
+            session(['error' => 'Saat ini reservasi user hanya mendukung pemesanan untuk satu tanggal']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $minimumDate = (new DateTime('today'))->modify('+14 days')->format('Y-m-d');
         if ($currentStatusKey === 'RESERVASI BARU' && $startDate < $minimumDate) {
-            $_SESSION['error'] = 'Reservasi hanya dapat diajukan minimal H-14 dari tanggal pelaksanaan';
+            session(['error' => 'Reservasi hanya dapat diajukan minimal H-14 dari tanggal pelaksanaan']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $building = $reservasiModel->findActiveBuildingById($buildingId);
         if (!$building) {
-            $_SESSION['error'] = 'Gedung yang dipilih tidak valid atau tidak aktif';
+            session(['error' => 'Gedung yang dipilih tidak valid atau tidak aktif']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $requiresUmkmSelection = $this->buildingHasUmkmReservationOptions($umkmModel, $buildingId);
         if ($requiresUmkmSelection && $umkmId <= 0) {
-            $_SESSION['error'] = 'UMKM wajib dipilih sebelum reservasi dikirim';
+            session(['error' => 'UMKM wajib dipilih sebelum reservasi dikirim']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $event = $reservasiModel->findActiveEventById($eventId);
         if (!$event) {
-            $_SESSION['error'] = 'Jenis acara yang dipilih tidak valid';
+            session(['error' => 'Jenis acara yang dipilih tidak valid']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $sessionSelection = $reservasiModel->resolveSessionSelection($sessionOption, $startTime, $endTime);
         if (!$sessionSelection) {
-            $_SESSION['error'] = $sessionOption === 'lainnya'
+            session(['error' => $sessionOption === 'lainnya'
                 ? 'Jam mulai dan jam selesai untuk opsi Lainnya wajib diisi dengan benar'
-                : 'Sesi reservasi yang dipilih tidak valid';
+                : 'Sesi reservasi yang dipilih tidak valid']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         $capacity = (int) ($building['capacity'] ?? 0);
         if ($capacity > 0 && $estPerson > $capacity) {
-            $_SESSION['error'] = 'Estimasi orang tidak boleh 0, maksimum ' . number_format($capacity, 0, ',', '.') . ' orang';
+            session(['error' => 'Estimasi orang tidak boleh 0, maksimum ' . number_format($capacity, 0, ',', '.') . ' orang']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
@@ -548,7 +548,7 @@ class ReservasiController extends Controller
         if ($umkmId > 0) {
             $umkmOption = $umkmModel->findReservationOptionById($umkmId);
             if (!$umkmOption || !in_array($buildingId, $umkmOption['building_ids'] ?? [], true)) {
-                $_SESSION['error'] = 'UMKM yang dipilih tidak tersedia untuk gedung tersebut';
+                session(['error' => 'UMKM yang dipilih tidak tersedia untuk gedung tersebut']);
                 $this->redirectToReservationForm($reservationId);
                 return;
             }
@@ -562,7 +562,7 @@ class ReservasiController extends Controller
             (string) ($sessionSelection['end_time'] ?? ''),
             $reservationId
         )) {
-            $_SESSION['error'] = 'Jadwal gedung pada tanggal dan sesi tersebut sudah terpakai';
+            session(['error' => 'Jadwal gedung pada tanggal dan sesi tersebut sudah terpakai']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
@@ -575,7 +575,7 @@ class ReservasiController extends Controller
         $newUmkmPath = $currentUmkmPath;
 
         if ($newIdentityPath === null) {
-            $_SESSION['error'] = 'Identitas KTP pada profil belum tersedia. Lengkapi profil terlebih dahulu sebelum mengubah reservasi.';
+            session(['error' => 'Identitas KTP pada profil belum tersedia. Lengkapi profil terlebih dahulu sebelum mengubah reservasi.']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
@@ -585,19 +585,19 @@ class ReservasiController extends Controller
         $hasNewRequestUpload = $requestFile !== null && $requestUploadErrorCode !== UPLOAD_ERR_NO_FILE;
 
         if (in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true) && !$hasNewRequestUpload) {
-            $_SESSION['error'] = 'Upload bukti Kerjasama UMKM wajib diisi sebelum reservasi dapat dikirim ke proses verifikasi';
+            session(['error' => 'Upload bukti Kerjasama UMKM wajib diisi sebelum reservasi dapat dikirim ke proses verifikasi']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
 
         if ($hasNewRequestUpload) {
             if ($requestUploadErrorCode !== UPLOAD_ERR_OK) {
-                $_SESSION['error'] = $this->getUploadErrorMessage(
+                session(['error' => $this->getUploadErrorMessage(
                     $requestUploadErrorCode,
                     in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true)
                         ? 'Bukti Kerjasama UMKM'
                         : 'File permohonan'
-                );
+                )]);
                 $this->redirectToReservationForm($reservationId);
                 return;
             }
@@ -607,9 +607,9 @@ class ReservasiController extends Controller
                 : 'reservasi/permohonan';
             $uploadedRequestFilename = upload_file($requestFile, $uploadDirectory);
             if ($uploadedRequestFilename === null) {
-                $_SESSION['error'] = in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true)
+                session(['error' => in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true)
                     ? 'Bukti Kerjasama UMKM gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF'
-                    : 'File permohonan gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF';
+                    : 'File permohonan gagal diunggah. Pastikan format file JPG, JPEG, PNG, atau PDF']);
                 $this->redirectToReservationForm($reservationId);
                 return;
             }
@@ -656,7 +656,7 @@ class ReservasiController extends Controller
                 }
             }
 
-            $_SESSION['error'] = 'Reservasi gagal diperbarui. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal diperbarui. Silakan coba lagi']);
             $this->redirectToReservationForm($reservationId);
             return;
         }
@@ -690,17 +690,17 @@ class ReservasiController extends Controller
             $this->deleteUploadedFile($currentIdentityPath);
         }
 
-        unset($_SESSION['old_reservasi']);
+        session()->forget('old_reservasi');
 
         $wasReturnedReservation = $currentStatusKey === 'BERKAS RESERVASI TIDAK SESUAI';
         $wasReturnedVerification = $currentStatusKey === 'BERKAS VERIFIKASI TIDAK SESUAI';
-        $_SESSION['success'] = in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true)
+        session(['success' => in_array($currentStatusKey, ['KERJASAMA UMKM', 'BERKAS VERIFIKASI TIDAK SESUAI'], true)
             ? ($wasReturnedVerification
                 ? 'Berkas verifikasi berhasil diperbarui dan statusnya kembali menjadi Proses Verifikasi'
                 : 'Bukti Kerjasama UMKM berhasil diunggah dan statusnya menjadi Proses Verifikasi')
             : ($wasReturnedReservation
                 ? 'Berkas reservasi berhasil diperbarui dan statusnya kembali menjadi Reservasi Baru'
-                : 'Reservasi berhasil diperbarui');
+                : 'Reservasi berhasil diperbarui')]);
         $this->redirect('/user/reservasi');
     }
 
@@ -713,9 +713,9 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request()->input('reservation_id', 0);
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Riwayat reservasi yang dipilih tidak valid';
+            session(['error' => 'Riwayat reservasi yang dipilih tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -724,20 +724,20 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findByUserId($reservationId, (int) $user['id']);
 
         if (!$reservation) {
-            $_SESSION['error'] = 'Riwayat reservasi tidak ditemukan';
+            session(['error' => 'Riwayat reservasi tidak ditemukan']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if (!$this->canUserDeleteReservation($reservation)) {
-            $_SESSION['error'] = 'Hanya riwayat reservasi dengan status Reservasi Baru yang dapat dihapus';
+            session(['error' => 'Hanya riwayat reservasi dengan status Reservasi Baru yang dapat dihapus']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $deleted = $reservasiModel->deleteByUserId($reservationId, (int) $user['id']);
         if (!$deleted) {
-            $_SESSION['error'] = 'Riwayat reservasi gagal dihapus. Silakan coba lagi';
+            session(['error' => 'Riwayat reservasi gagal dihapus. Silakan coba lagi']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -750,7 +750,7 @@ class ReservasiController extends Controller
         $this->deleteUploadedFile((string) ($reservation['form_path'] ?? ''));
         $this->deleteUploadedFile((string) ($reservation['umkm_path'] ?? ''));
 
-        $_SESSION['success'] = 'Riwayat reservasi berhasil dihapus';
+        session(['success' => 'Riwayat reservasi berhasil dihapus']);
         $this->redirect('/user/reservasi');
     }
 
@@ -763,9 +763,9 @@ class ReservasiController extends Controller
 
         verify_csrf();
 
-        $reservationId = (int) ($_POST['reservation_id'] ?? 0);
+        $reservationId = (int) request()->input('reservation_id', 0);
         if ($reservationId <= 0) {
-            $_SESSION['error'] = 'Riwayat reservasi yang dipilih tidak valid';
+            session(['error' => 'Riwayat reservasi yang dipilih tidak valid']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -774,13 +774,13 @@ class ReservasiController extends Controller
         $reservation = $reservasiModel->findByUserId($reservationId, (int) $user['id']);
 
         if (!$reservation) {
-            $_SESSION['error'] = 'Riwayat reservasi tidak ditemukan';
+            session(['error' => 'Riwayat reservasi tidak ditemukan']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         if (!$this->canUserCancelReservation($reservation)) {
-            $_SESSION['error'] = 'Hanya reservasi pada tahap Kerjasama UMKM, Proses Verifikasi, atau Pembayaran yang dapat dibatalkan';
+            session(['error' => 'Hanya reservasi pada tahap Kerjasama UMKM, Proses Verifikasi, atau Pembayaran yang dapat dibatalkan']);
             $this->redirect('/user/reservasi');
             return;
         }
@@ -792,34 +792,29 @@ class ReservasiController extends Controller
         );
 
         if (!$cancelled) {
-            $_SESSION['error'] = 'Reservasi gagal dibatalkan. Silakan coba lagi';
+            session(['error' => 'Reservasi gagal dibatalkan. Silakan coba lagi']);
             $this->redirect('/user/reservasi');
             return;
         }
 
         $this->paymentGateway()->cancelActivePayments($reservationId);
 
-        $_SESSION['success'] = 'Reservasi berhasil dibatalkan';
+        session(['success' => 'Reservasi berhasil dibatalkan']);
         $this->redirect('/user/reservasi');
     }
 
     private function requireAuthenticatedUser(): ?array
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        if (empty($_SESSION['user_auth']) || empty($_SESSION['user']['id'])) {
+        if (empty(session('user_auth')) || empty(session('user.id'))) {
             $this->redirect('/login');
             return null;
         }
 
         $userModel = $this->model('User');
-        $user = $userModel->findById((int) $_SESSION['user']['id']);
+        $user = $userModel->findById((int) session('user.id'));
 
         if (!$user) {
-            unset($_SESSION['user_auth'], $_SESSION['user']);
-            session_destroy();
+            destroy_user_auth_session();
             $this->redirect('/login');
             return null;
         }
@@ -839,34 +834,32 @@ class ReservasiController extends Controller
         $userModel = $this->model('User');
 
         if ($userModel->hasPendingProfileStatus($user)) {
-            $_SESSION['error'] = 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum membuka menu reservasi';
+            session(['error' => 'Lengkapi profil Anda terlebih dahulu di Dasbor sebelum membuka menu reservasi']);
             $this->redirect('/user/dasbor');
             return null;
         }
 
-        $error = $_SESSION['error'] ?? '';
-        $success = $_SESSION['success'] ?? '';
-        $oldInput = $_SESSION['old_reservasi'] ?? [];
+        $error = session('error', '');
+        $success = session()->pull('success', '');
+        $oldInput = session('old_reservasi', []);
         $shouldPreserveReservationFormState = !$consumeReservationFormState && !empty($oldInput);
 
-        unset($_SESSION['success']);
-
         if (!$shouldPreserveReservationFormState) {
-            unset($_SESSION['error'], $_SESSION['old_reservasi']);
+            session()->forget(['error', 'old_reservasi']);
         }
 
         $editingReservation = null;
-        $editReservationId = $requestedEditReservationId ?? (int) ($_GET['edit'] ?? ($oldInput['reservation_id'] ?? 0));
+        $editReservationId = $requestedEditReservationId ?? (int) request()->query('edit', ($oldInput['reservation_id'] ?? 0));
         if ($editReservationId > 0) {
             $editingReservation = $reservasiModel->findByUserId($editReservationId, (int) $user['id']);
             if (!$editingReservation) {
-                $_SESSION['error'] = 'Data reservasi yang ingin diubah tidak ditemukan';
+                session(['error' => 'Data reservasi yang ingin diubah tidak ditemukan']);
                 $this->redirect('/user/reservasi');
                 return null;
             }
 
             if (!$this->canUserEditReservation($editingReservation)) {
-                $_SESSION['error'] = 'Hanya reservasi dengan status Reservasi Baru, Kerjasama UMKM, Berkas Reservasi Tidak Sesuai, atau Berkas Verifikasi Tidak Sesuai yang dapat diubah';
+                session(['error' => 'Hanya reservasi dengan status Reservasi Baru, Kerjasama UMKM, Berkas Reservasi Tidak Sesuai, atau Berkas Verifikasi Tidak Sesuai yang dapat diubah']);
                 $this->redirect('/user/reservasi');
                 return null;
             }
@@ -895,7 +888,7 @@ class ReservasiController extends Controller
         }
 
         if ($consumeReservationFormState) {
-            unset($_SESSION['error'], $_SESSION['old_reservasi']);
+            session()->forget(['error', 'old_reservasi']);
         }
 
         $selectedBuilding = null;
@@ -940,16 +933,16 @@ class ReservasiController extends Controller
             $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? '')) ?? '';
 
             $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($identityRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($identityRelativePath, '/'))
                 : '';
             $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($applicationRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($applicationRelativePath, '/'))
                 : '';
             $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($umkmRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($umkmRelativePath, '/'))
                 : '';
             $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset_url('assets/uploads/' . ltrim($paymentRelativePath, '/'))
+                ? asset('assets/uploads/' . ltrim($paymentRelativePath, '/'))
                 : '';
             $reservation['notes'] = $this->normalizeReservationNotesForUser($reservation['notes'] ?? null);
         }
@@ -1264,7 +1257,7 @@ class ReservasiController extends Controller
             $path .= '/rubah/' . $editReservationId;
         }
 
-        return base_url($path);
+        return url($path);
     }
 
     private function resolveRouteReservationId(?string $editId): ?int
@@ -1276,7 +1269,7 @@ class ReservasiController extends Controller
 
     private function getReservationPrintUrl(): string
     {
-        return base_url('user/reservasi/permohonan/cetak');
+        return url('user/reservasi/permohonan/cetak');
     }
 
     private function paymentGateway(): PaymentTestGateway
@@ -1367,16 +1360,14 @@ class ReservasiController extends Controller
         };
     }
 
-    private function respondReservationPaymentJson(bool $success, string $message, array $payload = [], int $statusCode = 200): void
+    private function respondReservationPaymentJson(bool $success, string $message, array $payload = [], int $statusCode = 200): never
     {
-        http_response_code($statusCode);
-        header('Content-Type: application/json; charset=utf-8');
-
-        echo json_encode(array_merge([
-            'success' => $success,
-            'message' => $message,
-        ], $payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
+        throw new HttpResponseException(
+            response()->json(array_merge([
+                'success' => $success,
+                'message' => $message,
+            ], $payload), $statusCode, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
     }
 
     private function buildReservationPaymentDocumentData(array $user, array $reservation, string $method, ?array $payment = null): array
@@ -1574,7 +1565,7 @@ class ReservasiController extends Controller
             $query .= '&download=1';
         }
 
-        return base_url('user/reservasi/pembayaran/cetak/' . $reservationId . '/' . $filename . '?' . $query);
+        return url('user/reservasi/pembayaran/cetak/' . $reservationId . '/' . $filename . '?' . $query);
     }
 
     private function buildReservationVaExpiryDate(?DateTime $eventDate): ?DateTime
@@ -1710,15 +1701,16 @@ SVG;
         return rtrim(rtrim(number_format($minutes / 60, 2, ',', '.'), '0'), ',') . ' Jam';
     }
 
-    private function respondReservationPrintError(string $message): void
+    private function respondReservationPrintError(string $message): never
     {
-        http_response_code(422);
-        header('Content-Type: text/html; charset=UTF-8');
+        $html = '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Cetak Permohonan Gagal</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#1f2937;">'
+            . '<h2 style="margin-top:0;">Dokumen Permohonan Belum Bisa Dibuat</h2>'
+            . '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>'
+            . '<p>Silakan kembali ke form reservasi, periksa datanya, lalu coba cetak lagi.</p>'
+            . '</body></html>';
 
-        echo '<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Cetak Permohonan Gagal</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#1f2937;">';
-        echo '<h2 style="margin-top:0;">Dokumen Permohonan Belum Bisa Dibuat</h2>';
-        echo '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-        echo '<p>Silakan kembali ke form reservasi, periksa datanya, lalu coba cetak lagi.</p>';
-        echo '</body></html>';
+        throw new HttpResponseException(
+            response($html, 422)->header('Content-Type', 'text/html; charset=UTF-8')
+        );
     }
 }

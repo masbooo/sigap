@@ -43,7 +43,7 @@
             return [
                 'icon' => 'ti ti-brush',
                 'tone' => 'bg-danger-subtle text-danger',
-                'default_image' => asset_url('assets/uploads/umkm/rias/Rias.jpg'),
+                'default_image' => asset('assets/uploads/umkm/rias/Rias.jpg'),
             ];
         }
 
@@ -51,14 +51,14 @@
             return [
                 'icon' => 'ti ti-tools-kitchen-2',
                 'tone' => 'bg-warning-subtle text-warning',
-                'default_image' => asset_url('assets/uploads/umkm/katering/Katering.jpg'),
+                'default_image' => asset('assets/uploads/umkm/katering/Katering.jpg'),
             ];
         }
 
         return [
             'icon' => 'ti ti-building-store',
             'tone' => 'bg-primary-subtle text-primary',
-            'default_image' => asset_url('assets/uploads/Rias.jpg'),
+            'default_image' => asset('assets/uploads/Rias.jpg'),
         ];
     };
 
@@ -127,8 +127,8 @@
         });
 
         $url = $page > 1
-            ? base_url('umkm/' . $page)
-            : base_url('umkm');
+            ? url('umkm/' . $page)
+            : url('umkm');
 
         if (!empty($query)) {
             $url .= '?' . http_build_query($query);
@@ -215,7 +215,7 @@
                 <div class="collapse d-lg-block" id="umkmFilterCollapse">
                     <div class="card border-0 shadow-sm umkm-filter-panel position-sticky">
                         <div class="card-body p-4">
-                            <form method="GET" action="{{ base_url('umkm') }}" id="umkm-filter-form">
+                            <form method="GET" action="{{ url('umkm') }}" id="umkm-filter-form">
                                 <div class="mb-4">
                                     <div class="umkm-filter-section-title">Kategori</div>
                                     <div class="d-grid gap-2">
@@ -288,7 +288,7 @@
 
                                 <div class="d-grid gap-2">
                                     <button type="submit" class="btn btn-primary">TERAPKAN</button>
-                                    <a href="{{ base_url('umkm') }}" class="btn bg-danger-subtle text-danger waves-effect">RESET FILTER</a>
+                                    <a href="{{ url('umkm') }}" class="btn bg-danger-subtle text-danger waves-effect">RESET FILTER</a>
                                 </div>
                             </form>
                         </div>
@@ -332,7 +332,7 @@
                                 $ui = $productUi($item['product_label'] ?? $item['product_type'] ?? 'UMKM');
                                 $defaultImage = $ui['default_image'];
                                 $imagePath = trim((string) ($item['pic_path'] ?? '')) !== ''
-                                    ? asset_url('assets/uploads/' . ltrim((string) $item['pic_path'], '/'))
+                                    ? asset('assets/uploads/' . ltrim((string) $item['pic_path'], '/'))
                                     : $defaultImage;
                                 $ratingValue = $item['rating'] ?? null;
                                 $ratingLabel = $ratingValue !== null ? number_format((float) $ratingValue, 1) : '-';

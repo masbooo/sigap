@@ -55,7 +55,7 @@
         return $tone !== '' ? 'bg-' . $tone . '-subtle text-' . $tone : 'bg-secondary-subtle text-dark';
     };
 
-    $defaultThumb = asset_url('assets/custom/images/backgrounds/profilebg.jpg');
+    $defaultThumb = asset('assets/custom/images/backgrounds/profilebg.jpg');
     $resolveThumb = static function (?string $path) use ($defaultThumb): string {
         return resolve_public_upload_url($path, $defaultThumb);
     };
@@ -107,7 +107,7 @@
                 </div>
                 <div class="col-3">
                     <div class="text-center mb-n5">
-                        <img src="{{ base_url('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
+                        <img src="{{ asset('assets/custom/images/breadcrumb/ChatBc.png') }}" class="img-fluid mb-n4" alt="Breadcrumb">
                     </div>
                 </div>
             </div>
@@ -147,7 +147,7 @@
     @if (empty($ratingGroups))
         <div class="card shadow-sm">
             <div class="card-body py-5 text-center">
-                <img src="{{ asset_url('assets/custom/images/backgrounds/feedback.svg') }}" alt="Feedback" class="img-fluid mb-4 user-rating-empty-image">
+                <img src="{{ asset('assets/custom/images/backgrounds/feedback.svg') }}" alt="Feedback" class="img-fluid mb-4 user-rating-empty-image">
                 <h5 class="fw-semibold mb-2">Belum ada penilaian rating yang bisa diisi</h5>
                 <p class="text-muted mb-0">Penilaian rating baru dapat dilakukan setelah tanggal acara terlewati</p>
             </div>
@@ -189,7 +189,7 @@
                     <div class="row g-4">
                         @foreach ($targets as $target)
                             <div class="col-12 {{ $targetCols }}">
-                                <form action="{{ base_url('user/rating') }}" method="POST" class="h-100" data-user-rating-form>
+                                <form action="{{ url('user/rating') }}" method="POST" class="h-100" data-user-rating-form>
                                     {!! csrf_field() !!}
                                     <input type="hidden" name="reservation_id" value="{{ $group['reservation_id'] ?? 0 }}">
                                     <input type="hidden" name="target_type" value="{{ $target['target_type'] ?? '' }}">

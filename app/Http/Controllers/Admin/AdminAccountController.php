@@ -21,9 +21,8 @@ class AdminAccountController extends Controller
         $roles = $this->managedRoles($menuModel->getRoles());
 
         csrf_token();
-        $success = $_SESSION['success'] ?? '';
-        $error = $_SESSION['error'] ?? '';
-        unset($_SESSION['success'], $_SESSION['error']);
+        $success = session()->pull('success', '');
+        $error = session()->pull('error', '');
 
         $this->view('admin.pengaturan.admin', [
             'title' => 'Admin - SIGAP',
@@ -49,7 +48,7 @@ class AdminAccountController extends Controller
         $payload = $this->validatePayload(true);
 
         if ($payload !== null) {
-            $this->storeAccount($payload);
+            $this->storeAdminAccount($payload);
         }
 
         $this->redirect('/admin/pengaturan/admin');
@@ -60,9 +59,9 @@ class AdminAccountController extends Controller
         require_admin_menu_access('pengaturan.admin');
         verify_csrf();
 
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = (int) request('id', 0);
         if ($id <= 0) {
-            $_SESSION['error'] = 'Data akun admin tidak valid';
+            session(['error' => 'Data akun admin tidak valid']);
             $this->redirect('/admin/pengaturan/admin');
             return;
         }
@@ -70,7 +69,7 @@ class AdminAccountController extends Controller
         $payload = $this->validatePayload(false);
 
         if ($payload !== null) {
-            $this->updateAccount($id, $payload);
+            $this->updateAdminAccount($id, $payload);
         }
 
         $this->redirect('/admin/pengaturan/admin');
@@ -81,141 +80,121 @@ class AdminAccountController extends Controller
         require_admin_menu_access('pengaturan.admin');
         verify_csrf();
 
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = (int) request('id', 0);
         if ($id <= 0) {
-            $_SESSION['error'] = 'Data akun admin tidak valid';
+            session(['error' => 'Data akun admin tidak valid']);
             $this->redirect('/admin/pengaturan/admin');
             return;
         }
 
-        $this->destroyAccount($id);
+        $this->deleteAdminAccount($id);
         $this->redirect('/admin/pengaturan/admin');
     }
 
-    private function storeAccount(array $payload): void
+    private function storeAdminAccount(array $payload): void
     {
         $adminModel = $this->model('Admin');
 
-        if ($adminModel->usernameExistsForOther($payload['username'])) {
-            $_SESSION['error'] = 'Username admin sudah digunakan';
+        if ($adminModel->findByUsername($payload['username'])) {
+            session(['error' => 'Username admin sudah digunakan']);
             return;
         }
 
-        $created = $adminModel->createManagedAccount([
-            'username' => $payload['username'],
-            'password' => password_hash($payload['password'], PASSWORD_BCRYPT),
-            'name' => $payload['name'],
-            'role_id' => $payload['role_id'],
-            'district_id' => $payload['district_id'],
-            'status' => $payload['status'],
-        ]);
-
-        $_SESSION[$created ? 'success' : 'error'] = $created
+        $created = $adminModel->createAccount($payload);
+        session([$created ? 'success' : 'error' => $created
             ? 'Akun admin berhasil ditambahkan'
-            : 'Gagal menambahkan akun admin';
+            : 'Gagal menambahkan akun admin']);
     }
 
-    private function updateAccount(int $id, array $payload): void
+    private function updateAdminAccount(int $id, array $payload): void
     {
         $adminModel = $this->model('Admin');
-        $account = $adminModel->findById($id);
         $currentAdmin = admin_user() ?? [];
-        $currentAdminId = (int) ($currentAdmin['id'] ?? 0);
 
-        if (!$account || !in_array((int) ($account['role_id'] ?? 0), self::MANAGED_ROLE_IDS, true)) {
-            $_SESSION['error'] = 'Akun admin tidak ditemukan pada menu Admin';
+        if (!$adminModel->findAccountInRoleIds($id, self::MANAGED_ROLE_IDS)) {
+            session(['error' => 'Akun admin tidak ditemukan pada menu Admin']);
             return;
         }
 
         if ($adminModel->usernameExistsForOther($payload['username'], $id)) {
-            $_SESSION['error'] = 'Username admin sudah digunakan';
+            session(['error' => 'Username admin sudah digunakan']);
             return;
         }
 
-        if ($id === $currentAdminId && $payload['status'] !== 'AKTIF') {
-            $_SESSION['error'] = 'Admin yang sedang login tidak dapat menonaktifkan akunnya sendiri';
+        if ((int) ($currentAdmin['id'] ?? 0) === $id && $payload['status'] !== 'AKTIF') {
+            session(['error' => 'Admin yang sedang login tidak dapat menonaktifkan akunnya sendiri']);
             return;
         }
 
-        $updated = $adminModel->updateManagedAccount($id, [
-            'username' => $payload['username'],
-            'password' => $payload['password'] !== '' ? password_hash($payload['password'], PASSWORD_BCRYPT) : '',
-            'name' => $payload['name'],
-            'role_id' => $payload['role_id'],
-            'district_id' => $payload['district_id'],
-            'status' => $payload['status'],
-        ]);
-
-        $_SESSION[$updated ? 'success' : 'error'] = $updated
+        $updated = $adminModel->updateAccount($id, $payload);
+        session([$updated ? 'success' : 'error' => $updated
             ? 'Akun admin berhasil diperbarui'
-            : 'Gagal memperbarui akun admin';
+            : 'Gagal memperbarui akun admin']);
     }
 
-    private function destroyAccount(int $id): void
+    private function deleteAdminAccount(int $id): void
     {
         $adminModel = $this->model('Admin');
-        $account = $adminModel->findById($id);
         $currentAdmin = admin_user() ?? [];
-        $currentAdminId = (int) ($currentAdmin['id'] ?? 0);
 
-        if (!$account || !in_array((int) ($account['role_id'] ?? 0), self::MANAGED_ROLE_IDS, true)) {
-            $_SESSION['error'] = 'Akun admin tidak ditemukan pada menu Admin';
+        if (!$adminModel->findAccountInRoleIds($id, self::MANAGED_ROLE_IDS)) {
+            session(['error' => 'Akun admin tidak ditemukan pada menu Admin']);
             return;
         }
 
-        if ($id === $currentAdminId) {
-            $_SESSION['error'] = 'Admin yang sedang login tidak dapat menghapus akunnya sendiri';
+        if ((int) ($currentAdmin['id'] ?? 0) === $id) {
+            session(['error' => 'Admin yang sedang login tidak dapat menghapus akunnya sendiri']);
             return;
         }
 
         $deleted = $adminModel->deleteAccount($id);
-        $_SESSION[$deleted ? 'success' : 'error'] = $deleted
+        session([$deleted ? 'success' : 'error' => $deleted
             ? 'Akun admin berhasil dihapus'
-            : 'Gagal menghapus akun admin';
+            : 'Gagal menghapus akun admin']);
     }
 
     private function validatePayload(bool $isCreate): ?array
     {
-        $roleId = (int) ($_POST['role_id'] ?? 0);
-        $name = trim((string) ($_POST['name'] ?? ''));
-        $username = trim((string) ($_POST['username'] ?? ''));
-        $password = (string) ($_POST['password'] ?? '');
-        $districtId = (int) ($_POST['district_id'] ?? 0);
-        $status = strtoupper(trim((string) ($_POST['status'] ?? 'AKTIF')));
+        $roleId = (int) request('role_id', 0);
+        $name = trim((string) request('name', ''));
+        $username = trim((string) request('username', ''));
+        $password = (string) request('password', '');
+        $districtId = (int) request('district_id', 0);
+        $status = strtoupper(trim((string) request('status', 'AKTIF')));
         $requiresDistrict = in_array($roleId, self::DISTRICT_SCOPED_ROLE_IDS, true);
 
         if (!in_array($roleId, self::MANAGED_ROLE_IDS, true)) {
-            $_SESSION['error'] = 'Role admin tidak valid';
+            session(['error' => 'Role admin tidak valid']);
             return null;
         }
 
         if ($name === '' || $username === '') {
-            $_SESSION['error'] = 'Nama dan username wajib diisi';
+            session(['error' => 'Nama dan username wajib diisi']);
             return null;
         }
 
         if (!preg_match('/^[A-Za-z0-9_]{3,50}$/', $username)) {
-            $_SESSION['error'] = 'Username minimal 3 karakter dan hanya boleh berisi huruf, angka, atau underscore';
+            session(['error' => 'Username minimal 3 karakter dan hanya boleh berisi huruf, angka, atau underscore']);
             return null;
         }
 
         if ($isCreate && strlen($password) < 6) {
-            $_SESSION['error'] = 'Password minimal 6 karakter';
+            session(['error' => 'Password minimal 6 karakter']);
             return null;
         }
 
         if (!$isCreate && $password !== '' && strlen($password) < 6) {
-            $_SESSION['error'] = 'Password minimal 6 karakter';
+            session(['error' => 'Password minimal 6 karakter']);
             return null;
         }
 
         if (!in_array($status, self::STATUSES, true)) {
-            $_SESSION['error'] = 'Status akun admin tidak valid';
+            session(['error' => 'Status akun admin tidak valid']);
             return null;
         }
 
         if ($requiresDistrict && $districtId <= 0) {
-            $_SESSION['error'] = 'Kecamatan wajib dipilih untuk role ini';
+            session(['error' => 'Kecamatan wajib dipilih untuk role ini']);
             return null;
         }
 

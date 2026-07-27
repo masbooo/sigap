@@ -12,35 +12,35 @@
             ['src' => '../assets/images/profile/user-3.jpg', 'alt' => 'UMKM SIGAP 3'],
         ];
     $landingImageMap = [
-        '../assets/images/hero-img/bannerimg1.svg' => asset_url('assets/custom/images/hero-img/bannerimg1.svg'),
-        '../assets/images/hero-img/bannerimg2.svg' => asset_url('assets/custom/images/hero-img/bannerimg2.svg'),
-        '../assets/images/profile/user-1.jpg' => asset_url('assets/custom/images/profile/user-1.jpg'),
-        '../assets/images/profile/user-2.jpg' => asset_url('assets/custom/images/profile/user-2.jpg'),
-        '../assets/images/profile/user-3.jpg' => asset_url('assets/custom/images/profile/user-3.jpg'),
-        '../assets/images/frontend-pages/page-homepage.jpg' => asset_url('assets/custom/images/frontend-pages/page-homepage.jpg'),
-        '../assets/images/frontend-pages/page-about.jpg' => asset_url('assets/custom/images/frontend-pages/page-about.jpg'),
-        '../assets/images/frontend-pages/page-portfolio.jpg' => asset_url('assets/custom/images/frontend-pages/page-portfolio.jpg'),
-        '../assets/images/frontend-pages/page-pricing.jpg' => asset_url('assets/custom/images/frontend-pages/page-pricing.jpg'),
-        '../assets/images/slider/slider-group.png' => asset_url('assets/custom/images/slider/slider-group.png'),
-        '../assets/images/svgs/icon-star.svg' => asset_url('assets/custom/images/svgs/icon-star.svg'),
-        '../assets/images/backgrounds/business-woman-checking-her-mail.png' => asset_url('assets/custom/images/backgrounds/business-woman-checking-her-mail.png'),
-        '../assets/images/demos/demo-main.jpg' => asset_url('assets/custom/images/frontend-pages/template-1.png'),
-        '../assets/images/demos/demo-dark.jpg' => asset_url('assets/custom/images/frontend-pages/template-2.png'),
-        '../assets/images/demos/demo-horizontal.jpg' => asset_url('assets/custom/images/frontend-pages/template-3.png'),
-        '../assets/images/demos/demo-minisidebar.jpg' => asset_url('assets/custom/images/frontend-pages/template-4.png'),
-        '../assets/images/demos/demo-rtl.jpg' => asset_url('assets/custom/images/frontend-pages/screen.png'),
-        '../assets/images/apps/app-calendar.jpg' => asset_url('assets/custom/images/frontend-pages/tabsimage.png'),
-        '../assets/images/apps/app-chat.jpg' => asset_url('assets/custom/images/frontend-pages/design-collection.png'),
-        '../assets/images/apps/app-email.jpg' => asset_url('assets/custom/images/frontend-pages/screen.png'),
-        '../assets/images/apps/app-contact.jpg' => asset_url('assets/custom/images/frontend-pages/playframe.png'),
-        '../assets/images/apps/app-invoice.jpg' => asset_url('assets/custom/images/frontend-pages/template-1.png'),
-        '../assets/images/apps/modernize-bt-app-contact-list.jpg' => asset_url('assets/custom/images/frontend-pages/template-2.png'),
-        '../assets/images/apps/app-user-profile.jpg' => asset_url('assets/custom/images/frontend-pages/page-about.jpg'),
-        '../assets/images/apps/modernize-vue-app-blog.jpg' => asset_url('assets/custom/images/frontend-pages/page-portfolio.jpg'),
-        '../assets/images/apps/modernize-vue-app-blog-detail.jpg' => asset_url('assets/custom/images/frontend-pages/blog-detail-banner.jpg'),
-        '../assets/images/apps/modernize-vue-app-shop.jpg' => asset_url('assets/custom/images/frontend-pages/design-collection.png'),
-        '../assets/images/apps/app-ecommerce-detail.jpg' => asset_url('assets/custom/images/frontend-pages/page-pricing.jpg'),
-        '../assets/images/apps/app-ecommerce-list.jpg' => asset_url('assets/custom/images/frontend-pages/template-3.png'),
+        '../assets/images/hero-img/bannerimg1.svg' => asset('assets/custom/images/hero-img/bannerimg1.svg'),
+        '../assets/images/hero-img/bannerimg2.svg' => asset('assets/custom/images/hero-img/bannerimg2.svg'),
+        '../assets/images/profile/user-1.jpg' => asset('assets/custom/images/profile/user-1.jpg'),
+        '../assets/images/profile/user-2.jpg' => asset('assets/custom/images/profile/user-2.jpg'),
+        '../assets/images/profile/user-3.jpg' => asset('assets/custom/images/profile/user-3.jpg'),
+        '../assets/images/frontend-pages/page-homepage.jpg' => asset('assets/custom/images/frontend-pages/page-homepage.jpg'),
+        '../assets/images/frontend-pages/page-about.jpg' => asset('assets/custom/images/frontend-pages/page-about.jpg'),
+        '../assets/images/frontend-pages/page-portfolio.jpg' => asset('assets/custom/images/frontend-pages/page-portfolio.jpg'),
+        '../assets/images/frontend-pages/page-pricing.jpg' => asset('assets/custom/images/frontend-pages/page-pricing.jpg'),
+        '../assets/images/slider/slider-group.png' => asset('assets/custom/images/slider/slider-group.png'),
+        '../assets/images/svgs/icon-star.svg' => asset('assets/custom/images/svgs/icon-star.svg'),
+        '../assets/images/backgrounds/business-woman-checking-her-mail.png' => asset('assets/custom/images/backgrounds/business-woman-checking-her-mail.png'),
+        '../assets/images/demos/demo-main.jpg' => asset('assets/custom/images/frontend-pages/template-1.png'),
+        '../assets/images/demos/demo-dark.jpg' => asset('assets/custom/images/frontend-pages/template-2.png'),
+        '../assets/images/demos/demo-horizontal.jpg' => asset('assets/custom/images/frontend-pages/template-3.png'),
+        '../assets/images/demos/demo-minisidebar.jpg' => asset('assets/custom/images/frontend-pages/template-4.png'),
+        '../assets/images/demos/demo-rtl.jpg' => asset('assets/custom/images/frontend-pages/screen.png'),
+        '../assets/images/apps/app-calendar.jpg' => asset('assets/custom/images/frontend-pages/tabsimage.png'),
+        '../assets/images/apps/app-chat.jpg' => asset('assets/custom/images/frontend-pages/design-collection.png'),
+        '../assets/images/apps/app-email.jpg' => asset('assets/custom/images/frontend-pages/screen.png'),
+        '../assets/images/apps/app-contact.jpg' => asset('assets/custom/images/frontend-pages/playframe.png'),
+        '../assets/images/apps/app-invoice.jpg' => asset('assets/custom/images/frontend-pages/template-1.png'),
+        '../assets/images/apps/modernize-bt-app-contact-list.jpg' => asset('assets/custom/images/frontend-pages/template-2.png'),
+        '../assets/images/apps/app-user-profile.jpg' => asset('assets/custom/images/frontend-pages/page-about.jpg'),
+        '../assets/images/apps/modernize-vue-app-blog.jpg' => asset('assets/custom/images/frontend-pages/page-portfolio.jpg'),
+        '../assets/images/apps/modernize-vue-app-blog-detail.jpg' => asset('assets/custom/images/frontend-pages/blog-detail-banner.jpg'),
+        '../assets/images/apps/modernize-vue-app-shop.jpg' => asset('assets/custom/images/frontend-pages/design-collection.png'),
+        '../assets/images/apps/app-ecommerce-detail.jpg' => asset('assets/custom/images/frontend-pages/page-pricing.jpg'),
+        '../assets/images/apps/app-ecommerce-list.jpg' => asset('assets/custom/images/frontend-pages/template-3.png'),
     ];
 
     ob_start();
@@ -62,8 +62,8 @@
 					<p class="fs-5 mb-5 text-dark fw-normal" data-aos="fade-up" data-aos-delay="600" data-aos-duration="1000">
 					Nikmati fasilitas gedung serbaguna Pemerintah Kota Surabaya dengan akses mudah dan harga terjangkau   </p>
 					<div class="d-flex align-items-stretch gap-2 gap-sm-3 flex-nowrap" data-aos="fade-up" data-aos-delay="600" data-aos-duration="1000">
-						<a class="btn btn-primary px-3 px-sm-5 py-6 btn-hover-shadow d-inline-flex align-items-center justify-content-center text-center text-nowrap" href="{{ base_url('gedung') }}" data-no-pjax style="flex: 0 1 220px; max-width: calc(50% - 0.25rem);">LIHAT GEDUNG</a>
-						<a class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center scroll-link px-3 px-sm-5 py-6 text-center text-nowrap" href="{{ base_url('jadwal') }}" style="flex: 0 1 220px; max-width: calc(50% - 0.25rem);">LIHAT JADWAL</a>
+						<a class="btn btn-primary px-3 px-sm-5 py-6 btn-hover-shadow d-inline-flex align-items-center justify-content-center text-center text-nowrap" href="{{ url('gedung') }}" data-no-pjax style="flex: 0 1 220px; max-width: calc(50% - 0.25rem);">LIHAT GEDUNG</a>
+						<a class="btn btn-outline-primary d-inline-flex align-items-center justify-content-center scroll-link px-3 px-sm-5 py-6 text-center text-nowrap" href="{{ url('jadwal') }}" style="flex: 0 1 220px; max-width: calc(50% - 0.25rem);">LIHAT JADWAL</a>
 					</div>
 				</div>
 			</div>

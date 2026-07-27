@@ -2,12 +2,9 @@
 
 function set_authenticated_user_session(array $user): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    $_SESSION['user_auth'] = true;
-    $_SESSION['user'] = [
+    session([
+        'user_auth' => true,
+        'user' => [
         'id' => $user['id'],
         'username' => $user['username'],
         'name' => $user['name'],
@@ -18,42 +15,41 @@ function set_authenticated_user_session(array $user): void
         'id_path' => $user['id_path'] ?? '',
         'pic_path' => $user['pic_path'] ?? '',
         'status' => $user['status']
-    ];
-    $_SESSION['user_last_activity_at'] = time();
-    $_SESSION['user_browser_session_bootstrap_pending'] = true;
+        ],
+        'user_last_activity_at' => time(),
+        'user_browser_session_bootstrap_pending' => true,
+    ]);
 
-    unset(
-        $_SESSION['admin_auth'],
-        $_SESSION['admin'],
-        $_SESSION['admin_last_activity_at'],
-        $_SESSION['admin_browser_session_bootstrap_pending']
-    );
+    session()->forget([
+        'admin_auth',
+        'admin',
+        'admin_last_activity_at',
+        'admin_browser_session_bootstrap_pending',
+    ]);
 }
 
 function set_authenticated_admin_session(array $admin): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    $_SESSION['admin_auth'] = true;
-    $_SESSION['admin'] = [
+    session([
+        'admin_auth' => true,
+        'admin' => [
         'id' => $admin['id'],
         'username' => $admin['username'],
         'name' => $admin['name'],
         'role_id' => $admin['role_id'],
         'district_id' => $admin['district_id'],
         'status' => $admin['status']
-    ];
-    $_SESSION['admin_last_activity_at'] = time();
-    $_SESSION['admin_browser_session_bootstrap_pending'] = true;
+        ],
+        'admin_last_activity_at' => time(),
+        'admin_browser_session_bootstrap_pending' => true,
+    ]);
 
-    unset(
-        $_SESSION['user_auth'],
-        $_SESSION['user'],
-        $_SESSION['user_last_activity_at'],
-        $_SESSION['user_browser_session_bootstrap_pending']
-    );
+    session()->forget([
+        'user_auth',
+        'user',
+        'user_last_activity_at',
+        'user_browser_session_bootstrap_pending',
+    ]);
 }
 
 function auth_session_idle_timeout_seconds(string $scope = 'user'): int
@@ -91,116 +87,69 @@ function auth_session_expired_message(string $scope = 'user'): string
 
 function touch_user_session_activity(?int $timestamp = null): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['user_auth']) || $_SESSION['user_auth'] !== true || empty($_SESSION['user']['id'])) {
+    if (session('user_auth') !== true || empty(session('user.id'))) {
         return;
     }
 
-    $_SESSION['user_last_activity_at'] = $timestamp ?? time();
+    session(['user_last_activity_at' => $timestamp ?? time()]);
 }
 
 function touch_admin_session_activity(?int $timestamp = null): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] !== true || empty($_SESSION['admin']['id'])) {
+    if (session('admin_auth') !== true || empty(session('admin.id'))) {
         return;
     }
 
-    $_SESSION['admin_last_activity_at'] = $timestamp ?? time();
+    session(['admin_last_activity_at' => $timestamp ?? time()]);
 }
 
 function destroy_active_session(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    $_SESSION = [];
-
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        $sessionCookieOptions = [
-            'expires' => time() - 3600,
-            'path' => $params['path'] ?? '/',
-            'secure' => (bool) ($params['secure'] ?? false),
-            'httponly' => (bool) ($params['httponly'] ?? true),
-            'samesite' => $params['samesite'] ?? 'Lax',
-        ];
-
-        if (!empty($params['domain'])) {
-            $sessionCookieOptions['domain'] = (string) $params['domain'];
-        }
-
-        setcookie(session_name(), '', $sessionCookieOptions);
-    }
-
-    session_destroy();
+    session()->invalidate();
+    session()->regenerateToken();
 }
 
 function destroy_user_auth_session(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
+    session()->forget([
+        'user_auth',
+        'user',
+        'user_last_activity_at',
+        'user_browser_session_bootstrap_pending',
+    ]);
 
-    unset(
-        $_SESSION['user_auth'],
-        $_SESSION['user'],
-        $_SESSION['user_last_activity_at'],
-        $_SESSION['user_browser_session_bootstrap_pending']
-    );
-
-    if (empty($_SESSION['admin_auth']) && empty($_SESSION['admin'])) {
+    if (empty(session('admin_auth')) && empty(session('admin'))) {
         destroy_active_session();
     }
 }
 
 function destroy_admin_auth_session(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
+    session()->forget([
+        'admin_auth',
+        'admin',
+        'admin_last_activity_at',
+        'admin_browser_session_bootstrap_pending',
+    ]);
 
-    unset(
-        $_SESSION['admin_auth'],
-        $_SESSION['admin'],
-        $_SESSION['admin_last_activity_at'],
-        $_SESSION['admin_browser_session_bootstrap_pending']
-    );
-
-    if (empty($_SESSION['user_auth']) && empty($_SESSION['user'])) {
+    if (empty(session('user_auth')) && empty(session('user'))) {
         destroy_active_session();
     }
 }
 
 function enforce_user_session_timeout(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['user_auth']) || $_SESSION['user_auth'] !== true || empty($_SESSION['user']['id'])) {
-        unset($_SESSION['user_last_activity_at']);
+    if (session('user_auth') !== true || empty(session('user.id'))) {
+        session()->forget('user_last_activity_at');
         return;
     }
 
     $now = time();
-    $lastActivity = (int) ($_SESSION['user_last_activity_at'] ?? 0);
+    $lastActivity = (int) session('user_last_activity_at', 0);
 
     if ($lastActivity > 0 && ($now - $lastActivity) >= user_session_idle_timeout_seconds()) {
         destroy_user_auth_session();
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        $_SESSION['error'] = auth_session_expired_message('user');
+        session(['error' => auth_session_expired_message('user')]);
         return;
     }
 
@@ -209,26 +158,17 @@ function enforce_user_session_timeout(): void
 
 function enforce_admin_session_timeout(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] !== true || empty($_SESSION['admin']['id'])) {
-        unset($_SESSION['admin_last_activity_at']);
+    if (session('admin_auth') !== true || empty(session('admin.id'))) {
+        session()->forget('admin_last_activity_at');
         return;
     }
 
     $now = time();
-    $lastActivity = (int) ($_SESSION['admin_last_activity_at'] ?? 0);
+    $lastActivity = (int) session('admin_last_activity_at', 0);
 
     if ($lastActivity > 0 && ($now - $lastActivity) >= admin_session_idle_timeout_seconds()) {
         destroy_admin_auth_session();
-
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        $_SESSION['error'] = auth_session_expired_message('admin');
+        session(['error' => auth_session_expired_message('admin')]);
         return;
     }
 
@@ -237,26 +177,16 @@ function enforce_admin_session_timeout(): void
 
 function is_user_logged_in(): bool
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    return isset($_SESSION['user_auth']) && $_SESSION['user_auth'] === true
-        && isset($_SESSION['user'])
-        && is_array($_SESSION['user'])
-        && !empty($_SESSION['user']['id']);
+    return session('user_auth') === true
+        && is_array(session('user'))
+        && !empty(session('user.id'));
 }
 
 function is_admin_logged_in(): bool
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    return isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] === true
-        && isset($_SESSION['admin'])
-        && is_array($_SESSION['admin'])
-        && !empty($_SESSION['admin']['id']);
+    return session('admin_auth') === true
+        && is_array(session('admin'))
+        && !empty(session('admin.id'));
 }
 
 function is_logged_in(): bool
@@ -266,15 +196,10 @@ function is_logged_in(): bool
 
 function current_user_data(): ?array
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    $sessionUser = $_SESSION['user'] ?? null;
+    $sessionUser = session('user');
 
     if (
-        !isset($_SESSION['user_auth']) ||
-        $_SESSION['user_auth'] !== true ||
+        session('user_auth') !== true ||
         !is_array($sessionUser) ||
         empty($sessionUser['id'])
     ) {
@@ -293,7 +218,7 @@ function current_user_data(): ?array
     $mergedUser = $sessionUser;
 
     try {
-        $userModel = new \App\Models\User();
+        $userModel = new \App\Repositories\UserRepository();
         $dbUser = $userModel->findById($userId);
 
         if (is_array($dbUser) && !empty($dbUser)) {
@@ -309,7 +234,7 @@ function current_user_data(): ?array
                 'status' => $dbUser['status'] ?? ($sessionUser['status'] ?? '')
             ]);
 
-            $_SESSION['user'] = $mergedUser;
+            session(['user' => $mergedUser]);
         }
     } catch (Throwable $e) {
         $mergedUser = $sessionUser;
@@ -356,7 +281,7 @@ function resolve_user_default_profile_photo_path(?array $userData = null): strin
 
 function resolve_user_default_profile_photo_url(?array $userData = null): string
 {
-    return asset_url('assets/custom/' . resolve_user_default_profile_photo_path($userData));
+    return asset('assets/custom/' . resolve_user_default_profile_photo_path($userData));
 }
 
 function resolve_user_profile_photo_url(?array $userData = null): string
@@ -394,7 +319,7 @@ function resolve_user_profile_photo_url(?array $userData = null): string
 
     foreach ($candidates as $candidate) {
         if (legacy_first_existing_asset_path($candidate) !== null) {
-            return asset_url($candidate);
+            return asset($candidate);
         }
     }
 
@@ -406,7 +331,7 @@ function resolve_public_upload_url(?string $relativePath = null, string $default
     $relativePath = trim(str_replace('\\', '/', (string) $relativePath));
 
     if ($relativePath === '') {
-        return $defaultUrl !== '' ? $defaultUrl : asset_url('assets/custom/images/backgrounds/profilebg.jpg');
+        return $defaultUrl !== '' ? $defaultUrl : asset('assets/custom/images/backgrounds/profilebg.jpg');
     }
 
     if (preg_match('#^https?://#i', $relativePath)) {
@@ -429,11 +354,11 @@ function resolve_public_upload_url(?string $relativePath = null, string $default
 
     foreach ($candidates as $candidate) {
         if (legacy_first_existing_asset_path($candidate) !== null) {
-            return asset_url($candidate);
+            return asset($candidate);
         }
     }
 
-    return $defaultUrl !== '' ? $defaultUrl : asset_url('assets/custom/images/backgrounds/profilebg.jpg');
+    return $defaultUrl !== '' ? $defaultUrl : asset('assets/custom/images/backgrounds/profilebg.jpg');
 }
 
 function resolve_user_rating_notifications(?array $userData = null): array
@@ -455,7 +380,7 @@ function resolve_user_rating_notifications(?array $userData = null): array
     }
 
     try {
-        $ratingModel = new \App\Models\Rating();
+        $ratingModel = new \App\Repositories\RatingRepository();
         $cache[$userId] = $ratingModel->getUserRatingNotifications($userId);
     } catch (Throwable $e) {
         $cache[$userId] = [
@@ -474,11 +399,7 @@ function user()
 
 function admin_user()
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
-    return $_SESSION['admin'] ?? null;
+    return session('admin');
 }
 
 function resolve_admin_district_name(?array $adminData = null): string
@@ -496,7 +417,7 @@ function resolve_admin_district_name(?array $adminData = null): string
         $districtMap = [];
 
         try {
-            $wilayahModel = new \App\Models\Wilayah();
+            $wilayahModel = new \App\Repositories\WilayahRepository();
 
             foreach ($wilayahModel->getDistricts() as $district) {
                 $id = (int) ($district['id'] ?? 0);
@@ -526,14 +447,14 @@ function admin_menu_master_blueprint(): array
                     'key' => 'dashboard.infografis',
                     'label' => 'Infografis',
                     'icon' => 'ti ti-chart-pie-3',
-                    'href' => base_url('admin/dasbor'),
+                    'href' => url('admin/dasbor'),
                     'is_ajax' => true,
                 ],
                 [
                     'key' => 'dashboard.kalender',
                     'label' => 'Kalender',
                     'icon' => 'ti ti-calendar',
-                    'href' => base_url('admin/kalender'),
+                    'href' => url('admin/kalender'),
                     'is_ajax' => true,
                 ],
             ],
@@ -550,13 +471,13 @@ function admin_menu_master_blueprint(): array
                         [
                             'key' => 'data.riwayat.gedung',
                             'label' => 'Gedung',
-                            'href' => base_url('admin/riwayat/gedung'),
+                            'href' => url('admin/riwayat/gedung'),
                             'is_ajax' => true,
                         ],
                         [
                             'key' => 'data.riwayat.umkm',
                             'label' => 'UMKM',
-                            'href' => base_url('admin/riwayat/umkm'),
+                            'href' => url('admin/riwayat/umkm'),
                             'is_ajax' => true,
                         ],
                     ],
@@ -565,21 +486,21 @@ function admin_menu_master_blueprint(): array
                     'key' => 'data.reservasi',
                     'label' => 'Reservasi',
                     'icon' => 'ti ti-calendar-event',
-                    'href' => base_url('admin/reservasi'),
+                    'href' => url('admin/reservasi'),
                     'is_ajax' => true,
                 ],
                 [
                     'key' => 'data.verifikasi',
                     'label' => 'Verifikasi',
                     'icon' => 'ti ti-clipboard-check',
-                    'href' => base_url('admin/verifikasi'),
+                    'href' => url('admin/verifikasi'),
                     'is_ajax' => true,
                 ],
                 [
                     'key' => 'data.pembayaran',
                     'label' => 'Pembayaran',
                     'icon' => 'ti ti-cash-banknote',
-                    'href' => base_url('admin/pembayaran'),
+                    'href' => url('admin/pembayaran'),
                     'is_ajax' => true,
                 ],
             ],
@@ -639,13 +560,13 @@ function admin_menu_master_blueprint(): array
                         [
                             'key' => 'laporan.rating.gedung',
                             'label' => 'Gedung',
-                            'href' => base_url('admin/laporan/rating/gedung'),
+                            'href' => url('admin/laporan/rating/gedung'),
                             'is_ajax' => true,
                         ],
                         [
                             'key' => 'laporan.rating.umkm',
                             'label' => 'UMKM',
-                            'href' => base_url('admin/laporan/rating/umkm'),
+                            'href' => url('admin/laporan/rating/umkm'),
                             'is_ajax' => true,
                         ],
                     ],
@@ -660,21 +581,21 @@ function admin_menu_master_blueprint(): array
                     'key' => 'pengaturan.hak-akses',
                     'label' => 'Hak Akses',
                     'icon' => 'ti ti-shield-lock',
-                    'href' => base_url('admin/pengaturan/akses'),
+                    'href' => url('admin/pengaturan/akses'),
                     'is_ajax' => true,
                 ],
                 [
                     'key' => 'pengaturan.user',
                     'label' => 'User',
                     'icon' => 'ti ti-users',
-                    'href' => base_url('admin/pengaturan/user'),
+                    'href' => url('admin/pengaturan/user'),
                     'is_ajax' => true,
                 ],
                 [
                     'key' => 'pengaturan.admin',
                     'label' => 'Admin',
                     'icon' => 'ti ti-user-circle',
-                    'href' => base_url('admin/pengaturan/admin'),
+                    'href' => url('admin/pengaturan/admin'),
                     'is_ajax' => true,
                 ],
             ],
@@ -699,7 +620,7 @@ function admin_menu_blueprint(): array
     ];
 
     try {
-        $menuModel = new \App\Models\Menu();
+        $menuModel = new \App\Repositories\MenuRepository();
         $blueprint = $menuModel->getHydratedBlueprint($masterBlueprint, $defaultRoleAccessMap);
     } catch (Throwable $e) {
         $blueprint = $masterBlueprint;
@@ -841,7 +762,7 @@ function admin_role_access_keys(int $roleId): array
     $fallbackKeys = admin_role_default_access_keys($roleId);
 
     try {
-        $menuModel = new \App\Models\Menu();
+        $menuModel = new \App\Repositories\MenuRepository();
         $blueprint = admin_menu_blueprint();
         $leafItems = admin_flatten_leaf_menu_items($blueprint);
         $menuIdToKeyMap = [];
@@ -965,7 +886,7 @@ function admin_roles_catalog(): array
     ];
 
     try {
-        $menuModel = new \App\Models\Menu();
+        $menuModel = new \App\Repositories\MenuRepository();
         foreach ($menuModel->getRoles() as $role) {
             $roleId = (int) ($role['id'] ?? 0);
             if ($roleId <= 0) {
@@ -1023,7 +944,7 @@ function admin_extract_relative_menu_path(string $href): string
         return '';
     }
 
-    $base = app_base_url();
+    $base = url('/');
 
     if (strpos($href, $base . '/') === 0) {
         $href = substr($href, strlen($base));
@@ -1040,8 +961,7 @@ function resolve_admin_page_meta(?string $currentPath = null): array
     $normalizedPath = $currentPath;
 
     if ($normalizedPath === null) {
-        $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $normalizedPath = admin_extract_relative_menu_path($requestPath);
+        $normalizedPath = admin_extract_relative_menu_path('/' . trim(request()->path(), '/'));
     }
 
     $normalizedPath = $normalizedPath !== '' ? '/' . trim((string) $normalizedPath, '/') : '/admin/dasbor';
@@ -1052,7 +972,7 @@ function resolve_admin_page_meta(?string $currentPath = null): array
         'breadcrumbs' => [
             [
                 'label' => 'Infografis',
-                'href' => base_url('admin/dasbor'),
+                'href' => url('admin/dasbor'),
             ],
             [
                 'label' => 'Infografis',
@@ -1069,7 +989,7 @@ function resolve_admin_page_meta(?string $currentPath = null): array
         }
 
         $sectionLabel = ucwords(strtolower((string) ($item['heading'] ?? 'Menu')));
-        $sectionHref = base_url('admin/dasbor');
+        $sectionHref = url('admin/dasbor');
 
         foreach ($leafItems as $candidate) {
             if ((string) ($candidate['heading'] ?? '') !== (string) ($item['heading'] ?? '')) {
@@ -1078,7 +998,7 @@ function resolve_admin_page_meta(?string $currentPath = null): array
 
             $candidatePath = admin_extract_relative_menu_path((string) ($candidate['href'] ?? ''));
             if ($candidatePath !== '') {
-                $sectionHref = base_url(ltrim($candidatePath, '/'));
+                $sectionHref = url(ltrim($candidatePath, '/'));
                 break;
             }
         }
@@ -1199,16 +1119,14 @@ function resolve_admin_role_context(?array $adminData = null): array
 function require_login(): void
 {
     if (!is_user_logged_in()) {
-        header('Location: ' . base_url('login'));
-        exit;
+        throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect('login'));
     }
 }
 
 function require_admin(): void
 {
     if (!is_admin_logged_in()) {
-        header('Location: ' . base_url('admin/login'));
-        exit;
+        throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect('admin/login'));
     }
 }
 
@@ -1217,41 +1135,38 @@ function require_admin_menu_access(string $menuKey, string $fallbackPath = 'admi
     require_admin();
 
     if (!admin_has_menu_access($menuKey)) {
-        header('Location: ' . base_url($fallbackPath));
-        exit;
+        throw new \Illuminate\Http\Exceptions\HttpResponseException(redirect($fallbackPath));
     }
 }
 
 function clear_invalid_auth_session(): void
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
+    $user = session('user');
+    if ($user !== null && (!is_array($user) || empty($user['id']))) {
+        session()->forget([
+            'user',
+            'user_auth',
+            'user_last_activity_at',
+            'user_browser_session_bootstrap_pending',
+        ]);
     }
 
-    if (isset($_SESSION['user']) && (!is_array($_SESSION['user']) || empty($_SESSION['user']['id']))) {
-        unset(
-            $_SESSION['user'],
-            $_SESSION['user_auth'],
-            $_SESSION['user_last_activity_at'],
-            $_SESSION['user_browser_session_bootstrap_pending']
-        );
+    if (session('user_auth') !== true) {
+        session()->forget(['user_last_activity_at', 'user_browser_session_bootstrap_pending']);
     }
 
-    if (!isset($_SESSION['user_auth']) || $_SESSION['user_auth'] !== true) {
-        unset($_SESSION['user_last_activity_at'], $_SESSION['user_browser_session_bootstrap_pending']);
+    $admin = session('admin');
+    if ($admin !== null && (!is_array($admin) || empty($admin['id']))) {
+        session()->forget([
+            'admin',
+            'admin_auth',
+            'admin_last_activity_at',
+            'admin_browser_session_bootstrap_pending',
+        ]);
     }
 
-    if (isset($_SESSION['admin']) && (!is_array($_SESSION['admin']) || empty($_SESSION['admin']['id']))) {
-        unset(
-            $_SESSION['admin'],
-            $_SESSION['admin_auth'],
-            $_SESSION['admin_last_activity_at'],
-            $_SESSION['admin_browser_session_bootstrap_pending']
-        );
-    }
-
-    if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] !== true) {
-        unset($_SESSION['admin_last_activity_at'], $_SESSION['admin_browser_session_bootstrap_pending']);
+    if (session('admin_auth') !== true) {
+        session()->forget(['admin_last_activity_at', 'admin_browser_session_bootstrap_pending']);
     }
 }
 
@@ -1264,28 +1179,24 @@ function auth_browser_session_storage_key(string $scope = 'user'): string
 
 function consume_auth_browser_session_guard_mode(string $scope = 'user'): string
 {
-    if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_start();
-    }
-
     $normalizedScope = strtolower(trim($scope)) === 'admin' ? 'admin' : 'user';
     $authKey = $normalizedScope . '_auth';
     $payloadKey = $normalizedScope;
     $bootstrapKey = $normalizedScope . '_browser_session_bootstrap_pending';
+    $payload = session($payloadKey);
 
     if (
-        !isset($_SESSION[$authKey]) ||
-        $_SESSION[$authKey] !== true ||
-        empty($_SESSION[$payloadKey]) ||
-        !is_array($_SESSION[$payloadKey]) ||
-        empty($_SESSION[$payloadKey]['id'])
+        session($authKey) !== true ||
+        empty($payload) ||
+        !is_array($payload) ||
+        empty($payload['id'])
     ) {
-        unset($_SESSION[$bootstrapKey]);
+        session()->forget($bootstrapKey);
         return 'none';
     }
 
-    if (!empty($_SESSION[$bootstrapKey])) {
-        unset($_SESSION[$bootstrapKey]);
+    if (!empty(session($bootstrapKey))) {
+        session()->forget($bootstrapKey);
         return 'bootstrap';
     }
 

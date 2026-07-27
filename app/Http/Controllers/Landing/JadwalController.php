@@ -24,14 +24,8 @@ class JadwalController extends Controller
                 'minBookingDate' => $minBookingDate,
             ]);
         } catch (Throwable $e) {
-            echo '<pre>';
-            print_r([
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-            ]);
-            echo '</pre>';
-            die;
+            report($e);
+            abort(500, 'Gagal memuat halaman jadwal.');
         }
     }
 
@@ -41,22 +35,15 @@ class JadwalController extends Controller
             $jadwalModel = $this->model('Jadwal');
             $events = $jadwalModel->getCalendarEvents();
 
-            header('Content-Type: application/json; charset=utf-8');
-            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-
-            echo json_encode(
-                $events,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
-            );
+            return response()
+                ->json($events, 200, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
         } catch (Throwable $e) {
-            http_response_code(500);
-            header('Content-Type: application/json; charset=utf-8');
+            report($e);
 
-            echo json_encode([
+            return response()->json([
                 'error' => 'Gagal memuat data jadwal',
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            ], 500, [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
-
-        exit;
     }
 }
