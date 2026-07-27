@@ -495,7 +495,7 @@ class UmkmRepository extends LegacyRepository
         $normalizedPath = ltrim($relativePath, '/');
         $candidates = [];
 
-        if (strpos($normalizedPath, 'assets/uploads/') === 0) {
+        if (strpos($normalizedPath, 'assets/upload/') === 0) {
             $candidates[] = $normalizedPath;
         }
 
@@ -503,7 +503,7 @@ class UmkmRepository extends LegacyRepository
             $candidates[] = 'assets/' . $normalizedPath;
         }
 
-        $candidates[] = 'assets/uploads/' . $normalizedPath;
+        $candidates[] = 'assets/upload/' . $normalizedPath;
         $candidates[] = 'assets/custom/' . $normalizedPath;
         $candidates = array_values(array_unique($candidates));
 

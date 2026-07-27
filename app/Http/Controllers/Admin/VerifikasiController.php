@@ -191,16 +191,16 @@ class VerifikasiController extends Controller
             $paymentRelativePath = $this->normalizeRelativeUploadPath((string) ($reservation['payment_proof_path'] ?? ''));
 
             $reservation['identity_file_url'] = $identityRelativePath !== ''
-                ? asset('assets/uploads/' . ltrim($identityRelativePath, '/'))
+                ? asset('assets/upload/' . ltrim($identityRelativePath, '/'))
                 : '';
             $reservation['application_file_url'] = $applicationRelativePath !== ''
-                ? asset('assets/uploads/' . ltrim($applicationRelativePath, '/'))
+                ? asset('assets/upload/' . ltrim($applicationRelativePath, '/'))
                 : '';
             $reservation['umkm_file_url'] = $umkmRelativePath !== ''
-                ? asset('assets/uploads/' . ltrim($umkmRelativePath, '/'))
+                ? asset('assets/upload/' . ltrim($umkmRelativePath, '/'))
                 : '';
             $reservation['payment_file_url'] = $paymentRelativePath !== ''
-                ? asset('assets/uploads/' . ltrim($paymentRelativePath, '/'))
+                ? asset('assets/upload/' . ltrim($paymentRelativePath, '/'))
                 : '';
         }
         unset($reservation);

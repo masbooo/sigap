@@ -45,7 +45,7 @@ if (!function_exists('legacy_normalize_upload_relative_path')) {
         $path = trim(str_replace('\\', '/', (string) $path));
         $path = ltrim($path, '/');
 
-        foreach (['assets/uploads/', 'assets/upload/', 'uploads/', 'upload/'] as $prefix) {
+        foreach (['assets/upload/', 'assets/upload/', 'uploads/', 'upload/'] as $prefix) {
             if (str_starts_with($path, $prefix)) {
                 $path = substr($path, strlen($prefix));
                 break;
@@ -61,7 +61,7 @@ if (!function_exists('legacy_asset_path')) {
     {
         $path = legacy_normalize_asset_path($path);
 
-        return resource_path('assets' . ($path !== '' ? '/' . $path : ''));
+        return public_path('assets' . ($path !== '' ? '/' . $path : ''));
     }
 }
 
@@ -70,7 +70,7 @@ if (!function_exists('legacy_upload_path')) {
     {
         $path = legacy_normalize_upload_relative_path($path);
 
-        return resource_path('assets/upload' . ($path !== '' ? '/' . $path : ''));
+        return public_path('assets/upload' . ($path !== '' ? '/' . $path : ''));
     }
 }
 
@@ -84,7 +84,7 @@ if (!function_exists('legacy_asset_candidates')) {
             : $path;
 
         $candidates = [
-            resource_path('assets/' . legacy_normalize_asset_path($withoutAssetsPrefix)),
+            public_path('assets/' . legacy_normalize_asset_path($withoutAssetsPrefix)),
         ];
 
         $uploadRelativePath = legacy_normalize_upload_relative_path($path);

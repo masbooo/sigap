@@ -314,7 +314,7 @@ function resolve_user_profile_photo_url(?array $userData = null): string
         $candidates[] = 'assets/' . $normalizedPath;
     }
 
-    $candidates[] = 'assets/uploads/' . $normalizedPath;
+    $candidates[] = 'assets/upload/' . $normalizedPath;
     $candidates[] = 'assets/custom/' . $normalizedPath;
 
     foreach ($candidates as $candidate) {
@@ -341,7 +341,7 @@ function resolve_public_upload_url(?string $relativePath = null, string $default
     $normalizedPath = ltrim($relativePath, '/');
     $candidates = [];
 
-    if (strpos($normalizedPath, 'assets/uploads/') === 0) {
+    if (strpos($normalizedPath, 'assets/upload/') === 0) {
         $candidates[] = $normalizedPath;
     }
 
@@ -349,7 +349,7 @@ function resolve_public_upload_url(?string $relativePath = null, string $default
         $candidates[] = 'assets/' . $normalizedPath;
     }
 
-    $candidates[] = 'assets/uploads/' . $normalizedPath;
+    $candidates[] = 'assets/upload/' . $normalizedPath;
     $candidates[] = 'assets/custom/' . $normalizedPath;
 
     foreach ($candidates as $candidate) {

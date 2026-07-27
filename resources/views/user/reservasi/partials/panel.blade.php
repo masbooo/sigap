@@ -67,7 +67,7 @@
         $typeLabel = $extension !== '' ? strtoupper($extension) : 'FILE';
 
         return [
-            'url' => asset('assets/uploads/' . $normalizedPath),
+            'url' => asset('assets/upload/' . $normalizedPath),
             'name' => $filename,
             'extension' => $extension,
             'type_label' => $typeLabel,

@@ -28,7 +28,7 @@
         ],
     ];
 
-    $defaultBuildingPhoto = asset('assets/uploads/gedung/foto/Default.jpg');
+    $defaultBuildingPhoto = asset('assets/upload/gedung/foto/Default.jpg');
 
     $normalizeDistrictLabel = static function ($value) {
         $normalized = preg_replace('/\s+/', ' ', trim((string) $value));
@@ -182,7 +182,7 @@
                                         @foreach ($buildings as $i => $building)
                                             @php
                                                 $photo = !empty($building['building_photo'])
-                                                    ? asset('assets/uploads/' . ltrim($building['building_photo'], '/'))
+                                                    ? asset('assets/upload/' . ltrim($building['building_photo'], '/'))
                                                     : $defaultBuildingPhoto;
 
                                                 $description = trim((string) ($building['description'] ?? ''));

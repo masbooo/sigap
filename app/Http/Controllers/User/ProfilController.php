@@ -303,8 +303,8 @@ class ProfilController extends Controller
             return '';
         }
 
-        if (strpos($normalizedPath, 'assets/uploads/') === 0) {
-            return ltrim(substr($normalizedPath, strlen('assets/uploads/')), '/');
+        if (strpos($normalizedPath, 'assets/upload/') === 0) {
+            return ltrim(substr($normalizedPath, strlen('assets/upload/')), '/');
         }
 
         if (strpos($normalizedPath, 'uploads/') === 0) {

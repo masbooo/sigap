@@ -43,7 +43,7 @@
             return [
                 'icon' => 'ti ti-brush',
                 'tone' => 'bg-danger-subtle text-danger',
-                'default_image' => asset('assets/uploads/umkm/rias/Rias.jpg'),
+                'default_image' => asset('assets/upload/umkm/rias/Rias.jpg'),
             ];
         }
 
@@ -51,14 +51,14 @@
             return [
                 'icon' => 'ti ti-tools-kitchen-2',
                 'tone' => 'bg-warning-subtle text-warning',
-                'default_image' => asset('assets/uploads/umkm/katering/Katering.jpg'),
+                'default_image' => asset('assets/upload/umkm/katering/Katering.jpg'),
             ];
         }
 
         return [
             'icon' => 'ti ti-building-store',
             'tone' => 'bg-primary-subtle text-primary',
-            'default_image' => asset('assets/uploads/Rias.jpg'),
+            'default_image' => asset('assets/upload/Rias.jpg'),
         ];
     };
 
@@ -332,7 +332,7 @@
                                 $ui = $productUi($item['product_label'] ?? $item['product_type'] ?? 'UMKM');
                                 $defaultImage = $ui['default_image'];
                                 $imagePath = trim((string) ($item['pic_path'] ?? '')) !== ''
-                                    ? asset('assets/uploads/' . ltrim((string) $item['pic_path'], '/'))
+                                    ? asset('assets/upload/' . ltrim((string) $item['pic_path'], '/'))
                                     : $defaultImage;
                                 $ratingValue = $item['rating'] ?? null;
                                 $ratingLabel = $ratingValue !== null ? number_format((float) $ratingValue, 1) : '-';
