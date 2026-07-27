@@ -62,7 +62,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                                 <div class="message-body" data-simplebar>
                                     @forelse ($ratingNotificationItems as $item)
                                         <a href="{{ $item['href'] ?? base_url('user/rating') }}" class="py-6 px-7 d-flex align-items-center dropdown-item">
-                                            <span class="me-3 rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center shrink-0" style="width:48px;height:48px;">
+                                            <span class="me-3 rounded-circle bg-warning-subtle text-warning d-inline-flex align-items-center justify-content-center shrink-0 user-notification-rating-icon">
                                                 <i class="ti ti-star fs-6"></i>
                                             </span>
                                             <div class="w-100">
@@ -90,7 +90,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                                             class="rounded-circle"
                                             width="35"
                                             height="35"
-                                            onerror="this.onerror=null;this.src='{{ $defaultProfilePhoto }}';"
+                                            data-fallback-src="{{ $defaultProfilePhoto }}"
                                         />
                                     </div>
                                 </div>
@@ -109,7 +109,7 @@ $defaultProfilePhoto = resolve_user_default_profile_photo_url($navbarUser);
                                             class="rounded-circle"
                                             width="80"
                                             height="80"
-                                            onerror="this.onerror=null;this.src='{{ $defaultProfilePhoto }}';"
+                                            data-fallback-src="{{ $defaultProfilePhoto }}"
                                         />
                                         <div class="ms-3">
                                             <h5 class="mb-1 fs-3">{{ $profileName }}</h5>

@@ -11,7 +11,7 @@
     <link rel="shortcut icon" type="image/png" href="{{ asset_url('assets/custom/images/logos/sigap32.svg') }}">
 
     <!-- Core Css -->
-    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}?v=calendar-style-v23">
+    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}">
     <link rel="stylesheet" href="{{ asset_url('assets/custom/css/styles.css') }}">
     <style>
         .mfp-bg { z-index: 2000 !important; }

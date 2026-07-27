@@ -14,11 +14,11 @@
 <!-- THEME CORE -->
 <script src="{{ asset_url('assets/custom/js/theme/app.init.js') }}"></script>
 <script src="{{ asset_url('assets/custom/js/theme/theme.js') }}"></script>
-<script src="{{ asset_url('assets/custom/js/theme/sidebarmenu.js') }}?v=admin-sidebar-v2"></script>
+<script src="{{ asset_url('assets/custom/js/theme/sidebarmenu.js') }}"></script>
 <script src="{{ asset_url('assets/custom/js/theme/app.min.js') }}"></script>
 
 <!-- APPS -->
-<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}?v=calendar-submit-v2"></script>
+<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}"></script>
 <script src="{{ asset_url('assets/custom/libs/sweetalert2/sweetalert2.min.js') }}"></script>
 <script src="{{ asset_url('assets/custom/js/forms/sweet-alert.init.js') }}"></script>
 
@@ -31,7 +31,7 @@
 
 <!-- JAVASCRIPT -->
 <script src="{{ asset_url('assets/main/js/ajax.js') }}"></script>
-<script src="{{ asset_url('assets/main/js/admin.js') }}?v=admin-core-v14"></script>
+<script src="{{ asset_url('assets/main/js/admin.js') }}"></script>
 
 <!-- ICONS -->
 <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>

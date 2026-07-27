@@ -88,51 +88,6 @@
     ];
 @endphp
 
-<style>
-    .user-rating-page .rating-card {
-        border-radius: 1.25rem;
-    }
-
-    .user-rating-page .rating-thumb {
-        width: 88px;
-        height: 88px;
-        object-fit: cover;
-        border-radius: 1rem;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-        flex-shrink: 0;
-    }
-
-    .user-rating-page .rating-stars {
-        display: inline-flex;
-        align-items: center;
-        gap: .15rem;
-    }
-
-    .user-rating-page .rating-star {
-        border: 0;
-        background: transparent;
-        cursor: pointer;
-        appearance: none;
-        color: #d1d5db;
-        font-size: 1.5rem;
-        line-height: 1;
-        padding: 0;
-        transition: transform .15s ease, color .15s ease;
-    }
-
-    .user-rating-page .rating-star:hover,
-    .user-rating-page .rating-star.is-active {
-        color: #f59e0b;
-        transform: translateY(-1px);
-    }
-
-    .user-rating-page .rating-star:focus-visible {
-        outline: 2px solid rgba(245, 158, 11, .35);
-        outline-offset: 2px;
-        border-radius: .5rem;
-    }
-</style>
-
 <div class="container-fluid user-rating-page" id="user-rating-page" data-user-rating-page="1">
     <div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
         <div class="card-body px-4 py-3">
@@ -192,7 +147,7 @@
     @if (empty($ratingGroups))
         <div class="card shadow-sm">
             <div class="card-body py-5 text-center">
-                <img src="{{ asset_url('assets/custom/images/backgrounds/feedback.svg') }}" alt="Feedback" class="img-fluid mb-4" style="max-width: 240px;">
+                <img src="{{ asset_url('assets/custom/images/backgrounds/feedback.svg') }}" alt="Feedback" class="img-fluid mb-4 user-rating-empty-image">
                 <h5 class="fw-semibold mb-2">Belum ada penilaian rating yang bisa diisi</h5>
                 <p class="text-muted mb-0">Penilaian rating baru dapat dilakukan setelah tanggal acara terlewati</p>
             </div>
@@ -247,7 +202,7 @@
                                                     src="{{ $resolveThumb($target['thumbnail_url'] ?? '') }}"
                                                     alt="{{ $target['name_label'] ?? 'Rating' }}"
                                                     class="rating-thumb"
-                                                    onerror="this.onerror=null;this.src='{{ $defaultThumb }}';"
+                                                    data-fallback-src="{{ $defaultThumb }}"
                                                 />
 
                                                 <div class="flex-grow-1 min-w-0">

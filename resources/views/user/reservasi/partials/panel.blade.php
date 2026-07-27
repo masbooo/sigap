@@ -223,7 +223,7 @@
                         </span>
                         <h5 class="fw-bold mb-0"><b>Ketentuan Reservasi</b></h5>
                     </div>
-                    <ul style="text-align: justify;">
+                    <ul class="reservation-instruction-list">
                         <li>Pengajuan reservasi hanya dapat dilakukan <b>minimal H-14 dari tanggal acara</b></li>
                     </ul>
                     <div class="border rounded-3 bg-white p-3 mb-4">
@@ -244,7 +244,7 @@
                         </span>
                         <h5 class="fw-bold mb-0"><b>Alur Reservasi</b></h5>
                     </div>
-                    <ol class="ps-3" style="text-align: justify;">
+                    <ol class="ps-3 reservation-instruction-list">
                         <li><b class="text-info">Pilih Lokasi:</b> Tentukan wilayah, kecamatan, dan gedung yang ingin digunakan</li>
                         <li><b class="text-info">Pilih Tanggal:</b> Klik tanggal yang diinginkan pada kalender reservasi. Formulir reservasi akan otomatis muncul</li>
                         <li><b class="text-info">Isi Data:</b> Lengkapi seluruh data pada formulir yang tersedia. Semua kolom wajib diisi</li>
@@ -357,7 +357,7 @@
                     @if ($isEditMode && $reservationFeedbackNotes !== '')
                         <div class="alert alert-warning mb-4" role="alert">
                             <div class="fw-semibold mb-2">Catatan Revisi Petugas</div>
-                            <div style="white-space: pre-line;" class="text-danger">"<b>{{ $reservationFeedbackNotes }}</b>"</div>
+                            <div class="text-danger reservation-feedback-notes">"<b>{{ $reservationFeedbackNotes }}</b>"</div>
                         </div>
                     @endif
 

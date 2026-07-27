@@ -50,7 +50,7 @@
                         src="{{ base_url('captcha') }}"
                         id="captcha-img"
                         alt="Captcha"
-                        style="height: 45px; width: 130px; border: 1px solid #ddd; border-radius: 6px; background: #fff;"
+                        class="auth-captcha-image"
                     >
 
                     <button type="button" class="btn btn-sm btn-secondary" id="reload-captcha-btn">
@@ -134,7 +134,7 @@
         </div>
         <div class="row">
              <div class="col-6">
-                <button type="button" class="btn btn-danger w-100 py-8 mb-3 rounded-2" onclick="window.location.href='{{ base_url('lupa-sandi/batal') }}'">BATAL</button>
+                <a href="{{ base_url('lupa-sandi/batal') }}" class="btn btn-danger w-100 py-8 mb-3 rounded-2">BATAL</a>
             </div>
             <div class="col-6">
                 <button type="submit" class="btn btn-success w-100 py-8 mb-3 rounded-2">SIMPAN</button>
@@ -150,15 +150,11 @@
 </div>
 
 @if (!empty($error))
-<script>
-    window.__loginErrorMessage = "{{ addslashes($error) }}";
-</script>
+<div class="d-none" data-auth-flash="error" data-message="{!! htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @if (!empty($success))
-<script>
-    window.__loginSuccessMessage = "{{ addslashes($success) }}";
-</script>
+<div class="d-none" data-auth-flash="success" data-message="{!! htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @endsection

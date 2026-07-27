@@ -91,20 +91,20 @@ background: {{ $status === 'cloud' ? '#16a34a' : '#dc2626' }}; color:white;">
 <script src="{{ asset_url('assets/custom/js/theme/app.init.js') }}" defer></script>
 <script src="{{ asset_url('assets/custom/js/theme/theme.js') }}" defer></script>
 <script src="{{ asset_url('assets/custom/js/theme/app.min.js') }}" defer></script>
-<script src="{{ asset_url('assets/custom/js/frontend-landingpage/homepage.js') }}?v=landing-home-v3" defer></script>
+<script src="{{ asset_url('assets/custom/js/frontend-landingpage/homepage.js') }}" defer></script>
 <script src="{{ asset_url('assets/custom/libs/aos/dist/aos.js') }}" defer></script>
-<script src="{{ asset_url('assets/custom/js/landingpage/landingpage.js') }}?v=landing-core-v3" defer></script>
+<script src="{{ asset_url('assets/custom/js/landingpage/landingpage.js') }}" defer></script>
 {{-- <script src="{{ asset_url('assets/custom/js/widget/card-custom.js') }}" defer></script> --}}
 
 <!-- APPS -->
-<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}?v=calendar-submit-v2" defer></script>
+<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}" defer></script>
 
 <!-- JAVASCRIPT -->
-<script src="{{ asset_url('assets/main/js/gedung.js') }}?"></script>
+<script src="{{ asset_url('assets/main/js/gedung.js') }}"></script>
 <script src="{{ asset_url('assets/main/js/umkm.js') }}" defer></script>
 <script src="{{ asset_url('assets/main/js/kontak.js') }}" defer></script>
 <script src="{{ asset_url('assets/main/js/pjax.js') }}" defer></script>
-<script src="{{ asset_url('assets/main/js/navbar-state.js') }}?v=navbar-state-v2" defer></script>
+<script src="{{ asset_url('assets/main/js/navbar-state.js') }}" defer></script>
 
 <!-- ICONS -->
 <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>

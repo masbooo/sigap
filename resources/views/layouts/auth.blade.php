@@ -38,7 +38,7 @@
                         @endif
 
                         <a href="{{ $authLogoUrl }}" class="text-nowrap logo-img d-block px-4 py-9 w-100">
-                            <img src="{{ asset_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo" style="width:160px;" alt="Logo-Dark" />
+                            <img src="{{ asset_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo sigap-logo-text" alt="Logo-Dark" />
                         </a>
 
                         <div class="d-none d-xl-flex align-items-center justify-content-center h-n80">

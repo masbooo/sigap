@@ -553,9 +553,8 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
             <div
-                class="modal-header text-white border-0"
+                class="modal-header text-white border-0 reservation-event-detail-header"
                 id="eventDetailHeader"
-                style="background-color:#3b82f6;"
             >
                 <div class="d-flex align-items-center gap-2 flex-wrap">
                     <h5 class="modal-title text-light mb-0 fw-bold" id="eventDetailModalLabel">DETAIL RESERVASI</h5>
@@ -619,53 +618,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    #reservationPaymentVaModal .reservation-payment-va-modal__title,
-    #reservationPaymentQrisModal .reservation-payment-qris-modal__title {
-        margin: 0 0 0.25rem !important;
-        color: #ffffff !important;
-        font-size: 1.09375rem !important;
-        line-height: 1.2 !important;
-        font-weight: 700 !important;
-    }
-
-    #reservationPaymentVaModal .reservation-payment-va-modal__subtitle,
-    #reservationPaymentQrisModal .reservation-payment-qris-modal__subtitle {
-        max-width: 32rem;
-        color: rgba(255, 255, 255, 0.9) !important;
-        font-size: 0.765625rem !important;
-        line-height: 1.5 !important;
-        font-weight: 400 !important;
-        margin-bottom: 0 !important;
-    }
-
-    #reservationPaymentQrisModal .reservation-payment-qris-modal__actions {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 0.75rem !important;
-        width: 100% !important;
-        margin-top: 0.75rem !important;
-    }
-
-    #reservationPaymentQrisModal .reservation-payment-qris-modal__download-btn {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-width: 110px !important;
-        min-height: 46px !important;
-        margin: 0 !important;
-        padding: 0.75rem 1.25rem !important;
-        line-height: 1.2 !important;
-        font-size: 0.875rem !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
-        vertical-align: middle !important;
-        align-self: auto !important;
-    }
-</style>
 
 <div class="modal fade" id="reservationPaymentVaModal" tabindex="-1" aria-labelledby="reservationPaymentVaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable reservation-payment-va-modal__dialog">
@@ -823,86 +775,6 @@
         'summaryColumnId' => 'user-reservation-summary-column',
     ],
 ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
-</script>
-
-<script>
-(function () {
-    if (window.__sigapReservationFileGalleryBound) {
-        return;
-    }
-
-    window.__sigapReservationFileGalleryBound = true;
-
-    function normalizeFileType(fileType) {
-        return String(fileType || '').trim().toLowerCase();
-    }
-
-    function isImageType(fileType) {
-        return ['jpg', 'jpeg', 'png'].indexOf(normalizeFileType(fileType)) !== -1;
-    }
-
-    function buildPopupItem(trigger) {
-        var fileUrl = String(trigger.getAttribute('href') || '').trim();
-        var fileType = normalizeFileType(trigger.getAttribute('data-file-type'));
-
-        return {
-            src: fileUrl,
-            type: isImageType(fileType) ? 'image' : 'iframe'
-        };
-    }
-
-    document.addEventListener('click', function (event) {
-        var trigger = event.target.closest('[data-gallery-trigger="reservation-file"]');
-        if (!trigger) {
-            return;
-        }
-
-        var fileUrl = String(trigger.getAttribute('href') || '').trim();
-        if (fileUrl === '' || fileUrl === '#') {
-            return;
-        }
-
-        event.preventDefault();
-
-        if (!window.jQuery || !window.jQuery.magnificPopup) {
-            window.open(fileUrl, '_blank', 'noopener');
-            return;
-        }
-
-        var popupItem = buildPopupItem(trigger);
-        if (!popupItem.src) {
-            window.open(fileUrl, '_blank', 'noopener');
-            return;
-        }
-
-        if (popupItem.type === 'image') {
-            window.jQuery.magnificPopup.open({
-                items: popupItem,
-                type: 'image',
-                closeOnContentClick: true,
-                closeBtnInside: false,
-                fixedContentPos: true,
-                mainClass: 'mfp-img-mobile',
-                image: {
-                    verticalFit: true
-                }
-            });
-            return;
-        }
-
-        window.jQuery.magnificPopup.open({
-            items: popupItem,
-            type: 'iframe',
-            mainClass: 'mfp-fade',
-            closeBtnInside: false,
-            fixedContentPos: true,
-            iframe: {
-                markup: '<div class="mfp-iframe-scaler"><div class="mfp-close"></div><iframe class="mfp-iframe" src="//about:blank" frameborder="0" allowfullscreen></iframe></div>',
-                srcAction: 'iframe_src'
-            }
-        });
-    });
-})();
 </script>
 
 @endsection

@@ -8,7 +8,7 @@
         <h2 class="mb-3 fs-7 fw-bolder text-center">DAFTAR SIGAP</h2>
     </div>
 
-    <form action="{{ base_url('daftar') }}" method="POST" autocomplete="off" id="registerForm" novalidate>
+    <form action="{{ base_url('daftar') }}" method="POST" autocomplete="off" id="registerForm" data-check-username-url="{{ base_url('cek-username') }}" novalidate>
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
 
         <div class="mb-3">
@@ -88,7 +88,7 @@
                         src="{{ base_url('captcha') }}"
                         id="captcha-img"
                         alt="Captcha"
-                        style="height: 45px; width: 130px; border: 1px solid #ddd; border-radius: 6px; background: #fff;"
+                        class="auth-captcha-image"
                     >
 
                     <button type="button" class="btn btn-sm btn-secondary" id="reload-captcha-btn">
@@ -119,20 +119,12 @@
     </div>
 </div>
 
-<script>
-    window.__checkUsernameUrl = "{{ base_url('cek-username') }}";
-</script>
-
 @if (!empty($error))
-<script>
-    window.__loginErrorMessage = "{{ addslashes($error) }}";
-</script>
+<div class="d-none" data-auth-flash="error" data-message="{!! htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @if (!empty($success))
-<script>
-    window.__loginSuccessMessage = "{{ addslashes($success) }}";
-</script>
+<div class="d-none" data-auth-flash="success" data-message="{!! htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @endsection

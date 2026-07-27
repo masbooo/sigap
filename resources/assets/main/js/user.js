@@ -25,6 +25,15 @@ function initRequiredBiodataModal() {
     var identityObjectUrl = '';
 
     var districtVillageMap = window.__districtVillageMap || {};
+    var districtVillageMapEl = document.getElementById('required-biodata-district-village-map');
+
+    if (districtVillageMapEl && String(districtVillageMapEl.textContent || '').trim() !== '') {
+        try {
+            districtVillageMap = JSON.parse(districtVillageMapEl.textContent || '{}');
+        } catch (error) {
+            console.warn('Required biodata district map parse failed', error);
+        }
+    }
 
     function onlyDigits(value, maxLength) {
         var cleaned = String(value || '').replace(/\D/g, '');
@@ -473,11 +482,20 @@ function initRequiredBiodataModal() {
 }
 
 function initUserDashboardFlashMessages() {
-    var errorMessage = window.__loginErrorMessage;
-    var successMessage = window.__loginSuccessMessage;
+    var errorFlashEl = document.querySelector('[data-user-flash="error"]');
+    var successFlashEl = document.querySelector('[data-user-flash="success"]');
+    var errorMessage = errorFlashEl
+        ? String(errorFlashEl.getAttribute('data-message') || '').trim()
+        : String(window.__loginErrorMessage || '').trim();
+    var successMessage = successFlashEl
+        ? String(successFlashEl.getAttribute('data-message') || '').trim()
+        : String(window.__loginSuccessMessage || '').trim();
 
     if (errorMessage) {
         window.__loginErrorMessage = '';
+        if (errorFlashEl) {
+            errorFlashEl.removeAttribute('data-message');
+        }
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -493,6 +511,9 @@ function initUserDashboardFlashMessages() {
 
     if (successMessage) {
         window.__loginSuccessMessage = '';
+        if (successFlashEl) {
+            successFlashEl.removeAttribute('data-message');
+        }
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
@@ -4567,6 +4588,123 @@ function initUserRatingPage() {
 
 window.SigapPageInits = window.SigapPageInits || {};
 window.SigapPageInits.rating = initUserRatingPage;
+
+(function () {
+    if (window.__sigapFallbackImageBound) return;
+    window.__sigapFallbackImageBound = true;
+
+    function applyFallbackImage(image) {
+        if (!image || image.tagName !== 'IMG') {
+            return;
+        }
+
+        var fallbackSrc = String(image.getAttribute('data-fallback-src') || '').trim();
+        if (!fallbackSrc || image.dataset.fallbackApplied === '1') {
+            return;
+        }
+
+        image.dataset.fallbackApplied = '1';
+        image.src = fallbackSrc;
+    }
+
+    function syncFailedFallbackImages() {
+        document.querySelectorAll('img[data-fallback-src]').forEach(function (image) {
+            if (image.complete && image.naturalWidth === 0) {
+                applyFallbackImage(image);
+            }
+        });
+    }
+
+    document.addEventListener('error', function (event) {
+        applyFallbackImage(event.target);
+    }, true);
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncFailedFallbackImages);
+    } else {
+        syncFailedFallbackImages();
+    }
+
+    window.addEventListener('load', syncFailedFallbackImages);
+})();
+
+(function () {
+    if (window.__sigapReservationFileGalleryBound) {
+        return;
+    }
+
+    window.__sigapReservationFileGalleryBound = true;
+
+    function normalizeFileType(fileType) {
+        return String(fileType || '').trim().toLowerCase();
+    }
+
+    function isImageType(fileType) {
+        return ['jpg', 'jpeg', 'png'].indexOf(normalizeFileType(fileType)) !== -1;
+    }
+
+    function buildPopupItem(trigger) {
+        var fileUrl = String(trigger.getAttribute('href') || '').trim();
+        var fileType = normalizeFileType(trigger.getAttribute('data-file-type'));
+
+        return {
+            src: fileUrl,
+            type: isImageType(fileType) ? 'image' : 'iframe'
+        };
+    }
+
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-gallery-trigger="reservation-file"]');
+        if (!trigger) {
+            return;
+        }
+
+        var fileUrl = String(trigger.getAttribute('href') || '').trim();
+        if (fileUrl === '' || fileUrl === '#') {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (!window.jQuery || !window.jQuery.magnificPopup) {
+            window.open(fileUrl, '_blank', 'noopener');
+            return;
+        }
+
+        var popupItem = buildPopupItem(trigger);
+        if (!popupItem.src) {
+            window.open(fileUrl, '_blank', 'noopener');
+            return;
+        }
+
+        if (popupItem.type === 'image') {
+            window.jQuery.magnificPopup.open({
+                items: popupItem,
+                type: 'image',
+                closeOnContentClick: true,
+                closeBtnInside: false,
+                fixedContentPos: true,
+                mainClass: 'mfp-img-mobile',
+                image: {
+                    verticalFit: true
+                }
+            });
+            return;
+        }
+
+        window.jQuery.magnificPopup.open({
+            items: popupItem,
+            type: 'iframe',
+            mainClass: 'mfp-fade',
+            closeBtnInside: false,
+            fixedContentPos: true,
+            iframe: {
+                markup: '<div class="mfp-iframe-scaler"><div class="mfp-close"></div><iframe class="mfp-iframe" src="//about:blank" frameborder="0" allowfullscreen></iframe></div>',
+                srcAction: 'iframe_src'
+            }
+        });
+    });
+})();
 
 (function () {
     if (window.__sigapUserReservationActionBound) return;

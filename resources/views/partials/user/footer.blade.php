@@ -18,7 +18,7 @@
 <script src="{{ asset_url('assets/custom/js/theme/app.min.js') }}"></script>
 
 <!-- APPS -->
-<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}?v=calendar-submit-v2"></script>
+<script src="{{ asset_url('assets/custom/js/apps/calendar-init.js') }}"></script>
 <script src="{{ asset_url('assets/custom/libs/sweetalert2/sweetalert2.min.js') }}"></script>
 <script src="{{ asset_url('assets/custom/js/forms/sweet-alert.init.js') }}"></script>
 
@@ -31,7 +31,8 @@
 
 <!-- JAVASCRIPT -->
 <script src="{{ asset_url('assets/main/js/ajax.js') }}"></script>
-<script src="{{ asset_url('assets/main/js/user.js') }}?v=user-core-v18"></script>
+<script src="{{ asset_url('assets/main/js/user.js') }}"></script>
+<script src="{{ asset_url('assets/main/js/profil-user.js') }}"></script>
 
 <!-- ICONS -->
 <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>

@@ -17,37 +17,71 @@
         });
     }
 
+    function readAuthFlashMessage(type) {
+        var flashEl = document.querySelector('[data-auth-flash="' + type + '"]');
+        var dataMessage = flashEl ? String(flashEl.getAttribute('data-message') || '').trim() : '';
+
+        if (dataMessage !== '') {
+            return dataMessage;
+        }
+
+        return type === 'error'
+            ? String(window.__loginErrorMessage || '').trim()
+            : String(window.__loginSuccessMessage || '').trim();
+    }
+
+    function markAuthFlashMessageHandled(type) {
+        var flashEl = document.querySelector('[data-auth-flash="' + type + '"]');
+
+        if (flashEl) {
+            flashEl.removeAttribute('data-message');
+        }
+
+        if (type === 'error') {
+            window.__loginErrorMessage = '';
+            return;
+        }
+
+        window.__loginSuccessMessage = '';
+    }
+
     function showError() {
-        if (!window.__loginErrorMessage) return;
+        var errorMessage = readAuthFlashMessage('error');
+        if (!errorMessage) return;
+
+        markAuthFlashMessageHandled('error');
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
                 title: '<b>GAGAL</b>',
-                text: window.__loginErrorMessage,
+                text: errorMessage,
                 confirmButtonText: 'OK',
                 timer: 3000,
                 timerProgressBar: true
             });
         } else {
-            alert(window.__loginErrorMessage);
+            alert(errorMessage);
         }
     }
 
     function showSuccess() {
-        if (!window.__loginSuccessMessage) return;
+        var successMessage = readAuthFlashMessage('success');
+        if (!successMessage) return;
+
+        markAuthFlashMessageHandled('success');
 
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'success',
                 title: '<b>BERHASIL</b>',
-                text: window.__loginSuccessMessage,
+                text: successMessage,
                 confirmButtonText: 'OK',
                 timer: 3000,
                 timerProgressBar: true
             });
         } else {
-            alert(window.__loginSuccessMessage);
+            alert(successMessage);
         }
     }
 
@@ -365,7 +399,7 @@
         var confirmationInput = document.getElementById('registerPasswordConfirmation');
         var captchaInput = document.getElementById('registerCaptcha');
 
-        var checkUsernameUrl = window.__checkUsernameUrl || '/cek-username';
+        var checkUsernameUrl = String(form.getAttribute('data-check-username-url') || window.__checkUsernameUrl || '/cek-username').trim();
         var lastUsernameChecked = '';
         var lastUsernameAvailable = null;
 

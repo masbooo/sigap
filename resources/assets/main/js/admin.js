@@ -890,7 +890,7 @@
         var modalEl = getLatestElementById('adminReservationDetailModal', document.body || document);
 
         if (!item || !modalEl) {
-            return;
+            return false;
         }
 
         if (modalEl.parentElement !== document.body) {
@@ -952,6 +952,8 @@
         if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
             bootstrap.Modal.getOrCreateInstance(modalEl).show();
         }
+
+        return true;
     }
 
     function buildAdminReservationPopupItems(trigger) {
@@ -1327,6 +1329,7 @@
     });
 
     window.refreshAdminSidebarScroll = refreshAdminSidebarScroll;
+    window.showAdminReservationDetail = showAdminReservationDetail;
     window.initAdminPage = initializeAdminPage;
     window.initPage = initializeAdminPage;
 })();

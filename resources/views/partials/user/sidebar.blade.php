@@ -10,7 +10,7 @@ $ratingPendingCount = (int) ($ratingNotifications['pending_count'] ?? 0);
 
             <div class="brand-logo d-flex align-items-center justify-content-between">
                 <a href="{{ base_url('user/dasbor') }}" class="text-nowrap logo-img">
-                    <img src="{{ base_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo" style="width:160px;" alt="Logo-Dark" />
+                    <img src="{{ base_url('assets/custom/images/logos/logotxt_sigap_b.svg') }}" class="dark-logo sigap-logo-text" alt="Logo-Dark" />
                     <img src="{{ base_url('assets/custom/images/logos/logotxt_sigap_w.svg') }}" class="light-logo" alt="Logo-light" />
                 </a>
                 <a href="javascript:void(0)" class="sidebartoggler ms-auto text-decoration-none fs-5 d-block d-xl-none">

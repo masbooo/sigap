@@ -24,7 +24,7 @@
     </style>
     <!-- Core Css -->
     <link rel="stylesheet" href="{{ asset_url('assets/custom/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}?v=calendar-style-v23">
+    <link rel="stylesheet" href="{{ asset_url('assets/main/css/styles.css') }}">
 
     <!-- FullCalendar -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css">

@@ -427,6 +427,136 @@
         showBootstrapModal(modal);
     }
 
+    function setScopedText(root, id, value) {
+        if (!root) return;
+
+        const element = root.querySelector(`[id="${id}"]`);
+        if (element) element.textContent = value;
+    }
+
+    function getCalendarEventReservationId(eventObj) {
+        if (!eventObj) return '';
+
+        const props = eventObj.extendedProps || {};
+        return String(
+            props.reservation_id ||
+            props.reservasi_id ||
+            props.id ||
+            eventObj.id ||
+            ''
+        ).trim();
+    }
+
+    function applyAdminCalendarModalTheme(modal, status) {
+        if (!modal) return;
+
+        const themeClasses = [
+            'admin-reservation-theme-warning',
+            'admin-reservation-theme-info',
+            'admin-reservation-theme-danger',
+            'admin-reservation-theme-success',
+            'admin-reservation-theme-primary',
+            'admin-reservation-theme-secondary'
+        ];
+        const normalized = getNormalizedCalendarStatusKey(status);
+        const warningStatuses = ['RESERVASI BARU', 'PROSES VERIFIKASI', 'CEK PEMBAYARAN'];
+        const infoStatuses = ['KERJASAMA UMKM', 'MENUNGGU PEMBAYARAN'];
+        const dangerStatuses = ['BERKAS RESERVASI TIDAK SESUAI', 'BERKAS VERIFIKASI TIDAK SESUAI', 'BERKAS PEMBAYARAN TIDAK SESUAI', 'BERKAS TIDAK SESUAI', 'PERMOHONAN DITOLAK', 'DIBATALKAN PEMOHON'];
+
+        themeClasses.forEach(function (className) {
+            modal.classList.remove(className);
+        });
+
+        if (warningStatuses.indexOf(normalized) !== -1) {
+            modal.classList.add('admin-reservation-theme-warning');
+            return;
+        }
+
+        if (infoStatuses.indexOf(normalized) !== -1) {
+            modal.classList.add('admin-reservation-theme-info');
+            return;
+        }
+
+        if (normalized === 'PEMBAYARAN LUNAS') {
+            modal.classList.add('admin-reservation-theme-success');
+            return;
+        }
+
+        if (dangerStatuses.indexOf(normalized) !== -1) {
+            modal.classList.add('admin-reservation-theme-danger');
+            return;
+        }
+
+        modal.classList.add('admin-reservation-theme-secondary');
+    }
+
+    function openAdminEventDetailModal(eventObj) {
+        if (!eventObj) return false;
+
+        const props = eventObj.extendedProps || {};
+        const reservationId = getCalendarEventReservationId(eventObj);
+        const reservationNumber = String(
+            props.reservation_number ||
+            props.request_id ||
+            props.order_id ||
+            reservationId ||
+            ''
+        ).trim();
+
+        if (typeof window.showAdminReservationDetail === 'function' && reservationId) {
+            if (window.showAdminReservationDetail(reservationId, reservationNumber) === true) {
+                return true;
+            }
+        }
+
+        const modal = ensureModalOnBody('adminReservationDetailModal');
+        if (!modal) return false;
+
+        bindModalLifecycle(modal);
+
+        const statusMeta = getStatusMeta(props.status);
+        const badge = modal.querySelector('#adminReservationDetailStatusBadge');
+        const code = reservationNumber || eventObj.id || '-';
+        const requesterName = String(props.user_name || props.user || props.order_name || '-').trim() || '-';
+        const dateLabel = formatTanggalSewa(props.start_date || eventObj.startStr, props.end_date || eventObj.endStr);
+        const eventName = props.event_name || props.acara_name || eventObj.title || '-';
+
+        applyAdminCalendarModalTheme(modal, props.status);
+        if (badge) {
+            badge.className = 'badge admin-reservation-detail-status-badge';
+            badge.textContent = statusMeta.text;
+        }
+
+        setScopedText(modal, 'adminReservationDetailCode', `Kode : ${code}`);
+        setScopedText(modal, 'adminReservationDetailRequester', requesterName);
+        setScopedText(modal, 'adminReservationDetailUserAddress', props.user_address || '-');
+        setScopedText(modal, 'adminReservationDetailPhone', props.user_phone || '-');
+        setScopedText(modal, 'adminReservationDetailNik', props.user_nik || '-');
+        setScopedText(modal, 'adminReservationDetailBuilding', props.building_name || '-');
+        setScopedText(modal, 'adminReservationDetailBuildingAddress', props.building_address || props.location_label || '-');
+        setScopedText(modal, 'adminReservationDetailDate', dateLabel || '-');
+        setScopedText(modal, 'adminReservationDetailSession', props.session_display_name || props.session_name || '-');
+        setScopedText(modal, 'adminReservationDetailEvent', eventName);
+        setScopedText(modal, 'adminReservationDetailEstPerson', props.est_person ? `${props.est_person} orang` : '-');
+        setScopedText(modal, 'adminReservationDetailTotalPrice', props.total_price || '-');
+        setScopedText(modal, 'adminReservationDetailNotes', props.notes || '-');
+        setScopedText(modal, 'adminReservationDetailUmkm', props.umkm_name || '-');
+        setScopedText(modal, 'adminReservationDetailOwner', props.umkm_owner || '-');
+        setScopedText(modal, 'adminReservationDetailAddress', props.umkm_address || '-');
+        setScopedText(modal, 'adminReservationDetailCategory', props.umkm_type || '-');
+
+        showBootstrapModal(modal);
+        return true;
+    }
+
+    function openCalendarEventDetail(type, eventObj) {
+        if (type === 'admin' && openAdminEventDetailModal(eventObj)) {
+            return;
+        }
+
+        openEventDetailModal(eventObj);
+    }
+
     function getEmbeddedCalendarConfig(type) {
         let configElement = null;
 
@@ -682,6 +812,26 @@
             calendar.updateSize();
             applyDayCellStyles(calendar);
         });
+    }
+
+    function findCalendarEventOnDate(type, date) {
+        const calendar = window.calendarInstances[type];
+        if (!calendar || typeof calendar.getEvents !== 'function') return null;
+
+        const targetTime = normalizeDate(date).getTime();
+
+        return calendar.getEvents().find(function (event) {
+            const props = event.extendedProps || {};
+            const startValue = props.start_date || event.startStr || event.start;
+            const endValue = props.end_date || event.endStr || event.end || startValue;
+
+            if (!startValue) return false;
+
+            const startTime = normalizeDate(startValue).getTime();
+            const endTime = normalizeDate(endValue || startValue).getTime();
+
+            return targetTime >= startTime && targetTime <= Math.max(startTime, endTime);
+        }) || null;
     }
 
     function loadDistrictsByRegion(type, regionName) {
@@ -1236,8 +1386,11 @@
             if (!dateStr) return;
 
             const dateObj = normalizeDate(dateStr);
+            const hasEvent = !!findCalendarEventOnDate(getCalendarType(calendar.el), dateObj);
             const dayFrame = cell.querySelector('.fc-daygrid-day-frame');
 
+            cell.classList.remove('fc-sigap-past-empty');
+            cell.removeAttribute('aria-disabled');
             cell.style.backgroundColor = '';
             cell.style.backgroundImage = 'none';
             cell.style.borderRadius = '0';
@@ -1249,13 +1402,22 @@
                 dayFrame.style.setProperty('background-color', 'transparent', 'important');
                 dayFrame.style.setProperty('border-radius', '0', 'important');
                 dayFrame.style.setProperty('box-shadow', 'none', 'important');
+                dayFrame.style.removeProperty('cursor');
             }
 
             if (dateObj.getTime() === today.getTime()) {
                 cell.style.backgroundColor = '#e5e7eb';
             } else if (isPastDate(dateObj)) {
+                const cursor = hasEvent ? 'pointer' : 'not-allowed';
+
                 cell.style.backgroundColor = '#ffcccc';
-                cell.style.cursor = 'not-allowed';
+                cell.style.cursor = cursor;
+                if (dayFrame) dayFrame.style.cursor = cursor;
+
+                if (!hasEvent) {
+                    cell.classList.add('fc-sigap-past-empty');
+                    cell.setAttribute('aria-disabled', 'true');
+                }
             } else {
                 cell.style.backgroundColor = '#edfaef';
             }
@@ -1284,9 +1446,12 @@
     function handleDateClick(type, info) {
         const clickedDate = normalizeDate(info.date);
         const clickedDateStr = info.dateStr;
+        const eventOnDate = findCalendarEventOnDate(type, clickedDate);
 
         if (isPastDate(clickedDate)) {
-            showAlert('error', '<b>TANGGAL LAMPAU</b>', 'Tanggal yang sudah lewat tidak dapat dipilih.');
+            if (eventOnDate) {
+                openCalendarEventDetail(type, eventOnDate);
+            }
             return;
         }
 
@@ -1367,8 +1532,8 @@
                 info.jsEvent.preventDefault();
                 info.jsEvent.stopPropagation();
 
-                if (type === 'landing' || type === 'user') {
-                    openEventDetailModal(info.event);
+                if (type === 'landing' || type === 'user' || type === 'admin') {
+                    openCalendarEventDetail(type, info.event);
                 }
             },
 

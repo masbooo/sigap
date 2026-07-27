@@ -46,7 +46,7 @@
                 <div class="card border-0 zoom-in {{ $surfaceTone }} shadow-none">
                     <div class="card-body">
                         <div class="text-center">
-                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-white mb-3 shadow-sm" style="width:56px;height:56px;">
+                            <span class="dashboard-counter-icon d-inline-flex align-items-center justify-content-center rounded-circle bg-white mb-3 shadow-sm">
                                 <i class="{{ $iconClass }} fs-7 text-{{ $textTone }}"></i>
                             </span>
                             <p class="fw-semibold fs-3 text-{{ $textTone }} mb-1">{{ $cardLabel }}</p>
@@ -60,15 +60,11 @@
 </div>
 
 @if (!empty($error))
-<script>
-    window.__loginErrorMessage = "{{ addslashes($error) }}";
-</script>
+<div class="d-none" data-user-flash="error" data-message="{!! htmlspecialchars((string) $error, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @if (!empty($success))
-<script>
-    window.__loginSuccessMessage = "{{ addslashes($success) }}";
-</script>
+<div class="d-none" data-user-flash="success" data-message="{!! htmlspecialchars((string) $success, ENT_QUOTES, 'UTF-8') !!}"></div>
 @endif
 
 @if (!empty($forceProfileModal))
@@ -327,9 +323,9 @@
     </div>
 </div>
 
-<script>
-    window.__districtVillageMap = <?= json_encode($districtVillageMap ?? [], JSON_UNESCAPED_UNICODE); ?>;
-</script>
+<template id="required-biodata-district-village-map">
+<?= json_encode($districtVillageMap ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?>
+</template>
 
 @endif
 
