@@ -55,13 +55,6 @@
     <i class="ti ti-arrow-up fs-7"></i>
 </a>
 
-@php($status = (string) config('database.default'))
-
-<div style="position:fixed; bottom:10px; right:10px; padding:6px 10px; border-radius:6px; font-size:12px;
-background: {{ $status === 'cloud' ? '#16a34a' : '#dc2626' }}; color:white;">
-    {{ strtoupper($status) }}
-</div>
-
 <!-- CORE LIBRARY -->
 <script src="{{ asset('assets/custom/js/vendor.min.js') }}"></script>
 

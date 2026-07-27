@@ -24,10 +24,11 @@ class ExampleTest extends TestCase
         $this->assertNotNull(Route::getRoutes()->getByName('user.reservasi.index'));
     }
 
-    public function test_landing_footer_uses_the_laravel_database_configuration(): void
+    public function test_landing_footer_does_not_expose_database_configuration(): void
     {
         $html = view('partials.landing.footer')->render();
 
-        $this->assertStringContainsString(strtoupper((string) config('database.default')), $html);
+        $this->assertStringNotContainsString(strtoupper((string) config('database.default')), $html);
+        $this->assertStringContainsString('Copyright', $html);
     }
 }

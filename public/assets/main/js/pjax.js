@@ -230,8 +230,13 @@
 
         moveFragmentModalsToBody(fragmentDoc);
 
-        currentContainer.replaceWith(newContainer);
-        executeScriptsFromContainer(newContainer);
+        const cleanContainer = newContainer.cloneNode(true);
+        cleanContainer.querySelectorAll('footer, .top-btn, script').forEach(function (node) {
+            node.remove();
+        });
+
+        currentContainer.replaceWith(cleanContainer);
+        executeScriptsFromContainer(cleanContainer);
         removeStaleModals();
 
         fragmentDoc.querySelectorAll('.modal').forEach(function (newModal) {
