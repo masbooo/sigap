@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Throwable;
 
 class BpkadCallbackController extends Controller
@@ -15,7 +16,11 @@ class BpkadCallbackController extends Controller
         $payload = $request->all();
         $rawBody = $request->getContent();
         $signatureValid = $this->isSignatureValid($request, $rawBody);
-        $externalId = trim((string) data_get($payload, 'external_id', data_get($payload, 'reference_id', '')));
+        $externalId = trim((string) data_get(
+            $payload,
+            'external_reference',
+            data_get($payload, 'external_id', data_get($payload, 'reference_id', ''))
+        ));
         $method = strtoupper(trim((string) data_get($payload, 'method', data_get($payload, 'payment_method', ''))));
         $status = strtoupper(trim((string) data_get($payload, 'status', '')));
         $amount = data_get($payload, 'amount');
@@ -42,13 +47,13 @@ class BpkadCallbackController extends Controller
         if (!$signatureValid) {
             $this->finishLog($logId, 'rejected', 'Signature callback tidak valid.');
 
-            return response()->json(['ok' => false, 'message' => 'Invalid signature'], 401);
+            return response()->json(['success' => false, 'message' => 'Invalid signature.'], 401);
         }
 
         if ($payment === null) {
             $this->finishLog($logId, 'ignored', 'Payment external_id tidak ditemukan.');
 
-            return response()->json(['ok' => true, 'message' => 'Payment not found']);
+            return response()->json(['success' => true, 'message' => 'Payment not found.']);
         }
 
         try {
@@ -85,10 +90,10 @@ class BpkadCallbackController extends Controller
         } catch (Throwable $exception) {
             $this->finishLog($logId, 'failed', $exception->getMessage());
 
-            return response()->json(['ok' => false, 'message' => 'Callback failed'], 500);
+            return response()->json(['success' => false, 'message' => 'Callback failed.'], 500);
         }
 
-        return response()->json(['ok' => true]);
+        return response()->json(['success' => true]);
     }
 
     private function isSignatureValid(Request $request, string $rawBody): bool
@@ -98,23 +103,56 @@ class BpkadCallbackController extends Controller
             return false;
         }
 
-        $signature = trim((string) ($request->header('X-Signature') ?? $request->header('X-BPKAD-Signature') ?? ''));
+        $serviceKey = trim((string) config('payment.bpkad.service_key', ''));
+        $headerServiceKey = trim((string) $request->header('X-BPKAD-Service-Key', ''));
+        if ($serviceKey !== '' && $headerServiceKey !== '' && !hash_equals($serviceKey, $headerServiceKey)) {
+            return false;
+        }
+
+        $timestamp = trim((string) ($request->header('X-BPKAD-Timestamp') ?? $request->header('X-Timestamp') ?? ''));
+        if (!$this->isFreshTimestamp($timestamp)) {
+            return false;
+        }
+
+        $signature = trim((string) ($request->header('X-BPKAD-Signature') ?? $request->header('X-Signature') ?? ''));
         if ($signature === '') {
             return false;
         }
 
-        return hash_equals(hash_hmac('sha256', $rawBody, $secret), $signature);
+        $path = '/' . ltrim($request->getPathInfo(), '/');
+        $stringToSign = $request->method() . "\n" . $path . "\n" . $timestamp . "\n" . hash('sha256', $rawBody);
+        $expected = hash_hmac('sha256', $stringToSign, $secret);
+
+        if (hash_equals($expected, Str::lower($signature))) {
+            return true;
+        }
+
+        return hash_equals(hash_hmac('sha256', $rawBody, $secret), Str::lower($signature));
     }
 
     private function mapProviderStatus(string $status): string
     {
         return match ($status) {
-            'PAID', 'SUCCESS', 'SETTLED', 'LUNAS' => 'PAID',
+            'PAID', 'SUCCESS', 'SETTLED', 'SETTLEMENT', 'LUNAS' => 'PAID',
             'EXPIRED', 'KEDALUWARSA' => 'EXPIRED',
             'FAILED', 'FAIL', 'GAGAL' => 'FAILED',
             'CANCELLED', 'CANCELED', 'BATAL' => 'CANCELLED',
             default => '',
         };
+    }
+
+    private function isFreshTimestamp(string $timestamp): bool
+    {
+        if ($timestamp === '') {
+            return false;
+        }
+
+        $time = strtotime($timestamp);
+        if ($time === false) {
+            return false;
+        }
+
+        return abs(time() - $time) <= 300;
     }
 
     private function finishLog(int $logId, string $status, string $message): void

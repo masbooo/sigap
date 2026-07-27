@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Landing\HomeController;
+use App\Supports\Payment\BpkadPaymentGateway;
 use App\Supports\Payment\PaymentGateway;
 use App\Supports\Payment\PaymentTestGateway;
 use Illuminate\Support\Facades\Route;
+use ReflectionClass;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
@@ -47,5 +49,28 @@ class ExampleTest extends TestCase
         $this->assertNotNull($route);
         $this->assertSame('payment/callback/bpkad', $route->uri());
         $this->assertContains('POST', $route->methods());
+    }
+
+    public function test_bpkad_signature_uses_method_path_timestamp_and_body_hash(): void
+    {
+        config(['payment.bpkad.secret' => 'sandbox-secret']);
+
+        $body = json_encode([
+            'external_reference' => 'SIGAP-GSG-2026-000001',
+            'service_code' => '33',
+            'object_type' => 'GSG',
+            'customer_name' => 'PT Contoh',
+            'description' => 'Pembayaran sewa GSG',
+            'amount' => 1500000,
+            'year' => 2026,
+        ], JSON_UNESCAPED_SLASHES);
+        $timestamp = '2026-07-28T10:15:00+07:00';
+        $path = '/api/sandbox/external/sigap_gsg/payments/va';
+        $stringToSign = "POST\n{$path}\n{$timestamp}\n" . hash('sha256', (string) $body);
+        $expected = hash_hmac('sha256', $stringToSign, 'sandbox-secret');
+
+        $method = (new ReflectionClass(BpkadPaymentGateway::class))->getMethod('signature');
+
+        $this->assertSame($expected, $method->invoke(new BpkadPaymentGateway(), 'POST', $path, $timestamp, (string) $body));
     }
 }
