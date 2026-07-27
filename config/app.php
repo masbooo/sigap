@@ -54,8 +54,6 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
-    'base_url' => env('APP_BASE_URL', '/sigap'),
-
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

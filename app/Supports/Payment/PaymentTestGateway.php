@@ -11,7 +11,7 @@ use PDO;
 use RuntimeException;
 use Throwable;
 
-class PaymentTestGateway
+class PaymentTestGateway implements PaymentGateway
 {
     private const PROVIDER = 'BANK JATIM';
     private const METHOD_VA = 'VA';
@@ -98,6 +98,72 @@ class PaymentTestGateway
         }
 
         return $this->createVirtualAccount($reservation);
+    }
+
+    public function requestQris(array $reservation): array
+    {
+        $reservationId = (int) ($reservation['id'] ?? 0);
+        if ($reservationId <= 0) {
+            throw new InvalidArgumentException('Reservasi tidak valid untuk pembayaran QRIS.');
+        }
+
+        $this->expireOverduePayments($reservationId);
+
+        $activePayment = $this->findActivePayment($reservationId, self::METHOD_QRIS);
+        if ($activePayment !== null) {
+            return $activePayment;
+        }
+
+        return $this->createQris($reservation);
+    }
+
+    private function createQris(array $reservation): array
+    {
+        $reservationId = (int) ($reservation['id'] ?? 0);
+        $requestedAt = $this->currentDatabaseDateTime();
+        $expiredAt = $requestedAt->modify('+15 minutes');
+        $amount = (float) ($reservation['total_price'] ?? $reservation['amount'] ?? 0);
+        $externalId = $this->generateExternalId(self::METHOD_QRIS, $reservationId);
+        $qrisUrl = asset('assets/custom/images/payment/qris-sample-qr.png');
+        $rawResponse = [
+            'mode' => 'testing',
+            'provider' => self::PROVIDER,
+            'payment_method' => self::METHOD_QRIS,
+            'qris_url' => $qrisUrl,
+            'external_id' => $externalId,
+            'expired_at' => $expiredAt->format('Y-m-d H:i:s'),
+            'generated_at' => $requestedAt->format('Y-m-d H:i:s'),
+        ];
+
+        $stmt = $this->db->prepare("
+            INSERT INTO pembayaran
+                (reservation_id, payment_method, provider, external_id, payment_code, qris_url, amount, status, expired_at, raw_response)
+            VALUES
+                (:reservation_id, :payment_method, :provider, :external_id, NULL, :qris_url, :amount, :status, :expired_at, :raw_response)
+        ");
+
+        $stmt->execute([
+            ':reservation_id' => $reservationId,
+            ':payment_method' => self::METHOD_QRIS,
+            ':provider' => self::PROVIDER,
+            ':external_id' => $externalId,
+            ':qris_url' => $qrisUrl,
+            ':amount' => $amount,
+            ':status' => self::ACTIVE_STATUS,
+            ':expired_at' => $expiredAt->format('Y-m-d H:i:s'),
+            ':raw_response' => json_encode($rawResponse, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        ]);
+
+        return $this->findById((int) $this->db->lastInsertId()) ?? [
+            'reservation_id' => $reservationId,
+            'payment_method' => self::METHOD_QRIS,
+            'provider' => self::PROVIDER,
+            'external_id' => $externalId,
+            'qris_url' => $qrisUrl,
+            'amount' => $amount,
+            'status' => self::ACTIVE_STATUS,
+            'expired_at' => $expiredAt->format('Y-m-d H:i:s'),
+        ];
     }
 
     public function findActivePayment(int $reservationId, ?string $method = null): ?array

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Services\ReservationApplicationPdf;
 use App\Services\ReservationPaymentPdf;
-use App\Supports\Payment\PaymentTestGateway;
+use App\Supports\Payment\PaymentGateway;
 use DateTime;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Throwable;
@@ -176,17 +176,15 @@ class ReservasiController extends Controller
             $this->respondReservationPaymentJson(false, 'Metode pembayaran yang dipilih tidak valid', [], 422);
         }
 
-        if ($method !== 'va') {
-            $this->respondReservationPaymentJson(false, 'Metode QRIS belum tersedia untuk mode testing saat ini', [], 422);
-        }
-
         $reservation = $this->findUserPaymentReservation($reservationId, $user);
         if ($reservation === null) {
             return;
         }
 
         try {
-            $payment = $this->paymentGateway()->requestVirtualAccount($reservation);
+            $payment = $method === 'qris'
+                ? $this->paymentGateway()->requestQris($reservation)
+                : $this->paymentGateway()->requestVirtualAccount($reservation);
         } catch (Throwable $exception) {
             $this->respondReservationPaymentJson(false, $exception->getMessage() ?: 'Virtual Account gagal dibuat', [], 500);
         }
@@ -1272,9 +1270,9 @@ class ReservasiController extends Controller
         return url('user/reservasi/permohonan/cetak');
     }
 
-    private function paymentGateway(): PaymentTestGateway
+    private function paymentGateway(): PaymentGateway
     {
-        return new PaymentTestGateway();
+        return app(PaymentGateway::class);
     }
 
     private function findUserPaymentReservation(int $reservationId, array $user): ?array

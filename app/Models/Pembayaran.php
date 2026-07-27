@@ -18,7 +18,10 @@ class Pembayaran extends SigapModel
         'expired_at',
         'paid_at',
         'cancelled_at',
+        'last_checked_at',
         'raw_response',
+        'callback_payload',
+        'callback_received_at',
     ];
 
     protected $casts = [
@@ -27,7 +30,10 @@ class Pembayaran extends SigapModel
         'expired_at' => 'datetime',
         'paid_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'last_checked_at' => 'datetime',
         'raw_response' => 'array',
+        'callback_payload' => 'array',
+        'callback_received_at' => 'datetime',
     ];
 
     public function reservation()

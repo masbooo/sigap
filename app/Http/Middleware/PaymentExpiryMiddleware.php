@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Supports\Payment\PaymentTestGateway;
+use App\Supports\Payment\PaymentGateway;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,7 +14,7 @@ class PaymentExpiryMiddleware
     {
         if (!$request->is('assets/*')) {
             try {
-                app(PaymentTestGateway::class)->expireOverduePayments();
+                app(PaymentGateway::class)->expireOverduePayments();
             } catch (Throwable) {
                 // Expiry sync should not block the requested page.
             }

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\Landing\HomeController;
+use App\Supports\Payment\PaymentGateway;
+use App\Supports\Payment\PaymentTestGateway;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -30,5 +32,20 @@ class ExampleTest extends TestCase
 
         $this->assertStringNotContainsString(strtoupper((string) config('database.default')), $html);
         $this->assertStringContainsString('Copyright', $html);
+    }
+
+    public function test_payment_gateway_defaults_to_safe_test_mode(): void
+    {
+        $this->assertSame('test', config('payment.gateway'));
+        $this->assertInstanceOf(PaymentTestGateway::class, app(PaymentGateway::class));
+    }
+
+    public function test_bpkad_payment_callback_route_is_registered(): void
+    {
+        $route = Route::getRoutes()->getByName('payment.callback.bpkad');
+
+        $this->assertNotNull($route);
+        $this->assertSame('payment/callback/bpkad', $route->uri());
+        $this->assertContains('POST', $route->methods());
     }
 }

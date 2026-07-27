@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\CaptchaController;
 use App\Http\Controllers\Landing;
+use App\Http\Controllers\Payment\BpkadCallbackController;
 use App\Http\Controllers\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [Landing\HomeController::class, 'index'])->name('home');
@@ -13,6 +15,9 @@ Route::get('umkm/{page}', [Landing\UmkmController::class, 'index'])->whereNumber
 Route::get('kontak', [Landing\KontakController::class, 'index'])->name('kontak.index');
 Route::get('faq', [Landing\FaqController::class, 'index'])->name('faq.index');
 Route::get('captcha', [CaptchaController::class, 'image'])->name('captcha');
+Route::post('payment/callback/bpkad', BpkadCallbackController::class)
+    ->withoutMiddleware([ValidateCsrfToken::class])
+    ->name('payment.callback.bpkad');
 
 Route::controller(User\AuthController::class)->group(function (): void {
     Route::get('login', 'login')->name('login');
