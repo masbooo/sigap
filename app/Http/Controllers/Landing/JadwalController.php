@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Landing;
 
 use App\Http\Controllers\Controller;
 use DateTime;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Throwable;
 
 class JadwalController extends Controller
@@ -23,6 +24,8 @@ class JadwalController extends Controller
                 'events' => $events,
                 'minBookingDate' => $minBookingDate,
             ]);
+        } catch (HttpResponseException $e) {
+            throw $e;
         } catch (Throwable $e) {
             report($e);
             abort(500, 'Gagal memuat halaman jadwal.');

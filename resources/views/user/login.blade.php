@@ -3,7 +3,7 @@
 @section('authTopAction')
     <a
         href="{{ url('/') }}"
-        class="btn bg-danger-subtle text-danger waves-effect border-0 shadow-sm px-3 px-md-4 py-2 d-inline-flex align-items-center gap-2"
+        class="btn auth-back-button bg-danger-subtle text-danger waves-effect border-0 shadow-sm px-3 px-md-4 py-2 d-inline-flex align-items-center gap-2"
     >
         <i class="ti ti-arrow-left fs-4"></i>
         <span class="fw-medium">KEMBALI</span>
@@ -60,10 +60,10 @@
             <div class="invalid-feedback">Password belum diisi</div>
         </div>
 
-        <div class="row mb-3">
+        <div class="row mb-3 auth-captcha-row">
             <label class="form-label" for="loginCaptcha">Captcha</label>
-            <div class="col-6">
-                <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="col-6 auth-captcha-preview-col">
+                <div class="d-flex align-items-center gap-2 mb-2 auth-captcha-tools">
                     <img
                         src="{{ url('captcha') }}"
                         id="captcha-img"
@@ -71,17 +71,17 @@
                         class="auth-captcha-image"
                     >
 
-                    <button type="button" class="btn btn-sm btn-secondary" id="reload-captcha-btn">
-                        ↻
+                    <button type="button" class="btn btn-sm btn-secondary auth-captcha-refresh" id="reload-captcha-btn" aria-label="Muat ulang captcha">
+                        <i class="ti ti-refresh"></i>
                     </button>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-6 auth-captcha-input-col">
                 <input
                     type="text"
                     id="loginCaptcha"
                     name="captcha"
-                    class="form-control"
+                    class="form-control auth-captcha-input"
                     placeholder="Masukkan captcha"
                     inputmode="numeric"
                     maxlength="5"

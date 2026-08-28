@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [Landing\HomeController::class, 'index'])->name('home');
 Route::get('gedung', [Landing\GedungController::class, 'index'])->name('gedung.index');
 Route::get('jadwal', [Landing\JadwalController::class, 'index'])->name('jadwal.index');
+Route::get('jadwal/events', [Landing\JadwalController::class, 'events'])->name('jadwal.events');
 Route::get('umkm', [Landing\UmkmController::class, 'index'])->name('umkm.index');
 Route::get('umkm/{page}', [Landing\UmkmController::class, 'index'])->whereNumber('page')->name('umkm.page');
 Route::get('kontak', [Landing\KontakController::class, 'index'])->name('kontak.index');

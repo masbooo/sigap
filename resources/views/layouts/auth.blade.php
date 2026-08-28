@@ -6,16 +6,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    @php
+        $authMainCssVersion = is_file(public_path('assets/main/css/styles.css'))
+            ? filemtime(public_path('assets/main/css/styles.css'))
+            : time();
+        $authLoginJsVersion = is_file(public_path('assets/main/js/login.js'))
+            ? filemtime(public_path('assets/main/js/login.js'))
+            : time();
+    @endphp
+
     <link rel="shortcut icon" type="image/png" href="{{ asset('assets/custom/images/logos/sigap32.svg') }}">
 
     <link rel="stylesheet" href="{{ asset('assets/custom/css/styles.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/main/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/main/css/styles.css') }}?v={{ $authMainCssVersion }}">
     <link rel="stylesheet" href="{{ asset('assets/custom/libs/sweetalert2/sweetalert2.min.css') }}">
 
     <title>{{ $title ?? 'Login SIGAP' }}</title>
 </head>
 
-<body>  
+<body class="auth-page preload">
     @php
         $authLogoUrl = $authLogoUrl ?? url('login');
         $authSessionRedirectConfig = is_array($authSessionRedirectConfig ?? null)
@@ -32,7 +41,7 @@
                 <div class="row g-0">
                     <div class="col-xl-7 col-xxl-8 position-relative">
                         @hasSection('authTopAction')
-                            <div class="position-absolute top-0 end-0 mt-3 mt-md-4 me-3 me-md-4 me-xl-5 z-3">
+                            <div class="auth-top-action position-absolute top-0 end-0 mt-3 mt-md-4 me-3 me-md-4 me-xl-5 z-3">
                                 @yield('authTopAction')
                             </div>
                         @endif
@@ -62,7 +71,7 @@
     <script src="{{ asset('assets/custom/js/theme/theme.js') }}"></script>
     <script src="{{ asset('assets/custom/js/theme/app.min.js') }}"></script>
     <script src="{{ asset('assets/custom/libs/sweetalert2/sweetalert2.min.js') }}"></script>
-    <script src="{{ asset('assets/main/js/login.js') }}"></script>
+    <script src="{{ asset('assets/main/js/login.js') }}?v={{ $authLoginJsVersion }}"></script>
     <script src="{{ asset('assets/js/plugins/bootstrap-validation-init.js') }}"></script>
 </body>
 </html>

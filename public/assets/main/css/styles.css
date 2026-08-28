@@ -20,6 +20,45 @@ html {
     background: #fff;
 }
 
+.auth-captcha-tools {
+    width: 100%;
+}
+
+.auth-captcha-refresh {
+    width: 45px;
+    min-width: 45px;
+    height: 45px;
+    flex: 0 0 45px;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-captcha-input {
+    min-width: 0;
+}
+
+@media (max-width: 575.98px) and (orientation: portrait) {
+    .auth-captcha-row {
+        row-gap: 0.5rem;
+    }
+
+    .auth-captcha-row .auth-captcha-preview-col,
+    .auth-captcha-row .auth-captcha-input-col {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    .auth-captcha-row .auth-captcha-tools {
+        margin-bottom: 0 !important;
+    }
+
+    .auth-captcha-row .auth-captcha-input {
+        width: 100%;
+    }
+}
+
 .sigap-logo-text {
     width: 160px;
 }
@@ -492,6 +531,57 @@ body.page-leaving #main-wrapper {
     opacity: 0;
     transform: translateY(8px);
     pointer-events: none;
+}
+
+body.auth-page #main-wrapper,
+body.auth-page.page-leaving #main-wrapper {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: none !important;
+}
+
+body.auth-page.preload #main-wrapper {
+    opacity: 0;
+    visibility: hidden;
+    transform: none;
+}
+
+body.auth-page.auth-ready #main-wrapper {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+}
+
+.auth-top-action {
+    width: max-content;
+    min-height: 45px;
+    contain: layout paint;
+}
+
+.auth-back-button {
+    min-width: 165px;
+    min-height: 45px;
+    justify-content: center;
+    line-height: 1.2;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    transition: none !important;
+    will-change: auto;
+}
+
+.auth-back-button .ti {
+    width: 1.1rem;
+    min-width: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+    .auth-back-button {
+        min-width: 140px;
+    }
 }
 
 

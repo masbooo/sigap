@@ -1,4 +1,14 @@
 (function () {
+    var authRedirectPending = false;
+
+    function revealAuthPage() {
+        if (authRedirectPending || !document.body) return;
+
+        document.body.classList.remove('preload');
+        document.body.classList.remove('page-leaving');
+        document.body.classList.add('auth-ready');
+    }
+
     function reloadCaptcha() {
         var captchaImg = document.getElementById('captcha-img');
         if (!captchaImg) return;
@@ -89,7 +99,7 @@
         var config = window.__authSessionRedirectConfig || {};
 
         if (!config || config.active !== true) {
-            return;
+            return false;
         }
 
         var storageKey = String(config.storageKey || '').trim();
@@ -104,13 +114,18 @@
         }
 
         if (hasBrowserSessionMarker && dashboardUrl !== '') {
+            authRedirectPending = true;
             window.location.replace(dashboardUrl);
-            return;
+            return true;
         }
 
         if (logoutUrl !== '') {
+            authRedirectPending = true;
             window.location.replace(logoutUrl);
+            return true;
         }
+
+        return false;
     }
 
     function debounce(fn, delay) {
@@ -593,7 +608,13 @@
     }
 
     window.addEventListener('DOMContentLoaded', function () {
-        handleAuthenticatedSessionRedirect();
+        var redirecting = handleAuthenticatedSessionRedirect();
+        revealAuthPage();
+
+        if (redirecting) {
+            return;
+        }
+
         bindCaptchaReload();
         bindPasswordToggle();
         bindLoginValidation();
@@ -602,4 +623,8 @@
         showError();
         showSuccess();
     });
+
+    window.addEventListener('pageshow', revealAuthPage);
+    window.addEventListener('load', revealAuthPage);
+    window.setTimeout(revealAuthPage, 1000);
 })();
